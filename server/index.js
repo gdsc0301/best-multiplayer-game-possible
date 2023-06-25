@@ -1,6 +1,6 @@
 import { IncomingMessage, createServer } from "node:http";
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 6600;
 const BasicHeaders = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "http://localhost:5173",
@@ -25,32 +25,33 @@ class Player {
         return {
             x: this.#x,
             y: this.#y,
+            direction: this.#direction,
             username: this.#username
         };
     }
 
     move(x,y) {
-        this.#x += x;
-        this.#y += y;
+        this.#x += x * 10;
+        this.#y += y * 10;
     }
 }
 
 class Response {
-    #json;
-    #status;
-    #error;
+    json;
+    status;
+    error;
 
-    constructor(json, status = 200, error = '') {
-        this.#json = json;
-        this.#status = status;
-        this.#error = error;
+    constructor(json = {}, status = 200, error = '') {
+        this.json = json;
+        this.status = status;
+        this.error = error;
     }
 
-    get json() {
+    get toString() {
         return JSON.stringify({
-            status: this.#status,
-            error: this.#error,
-            response: this.#json
+            status: this.status,
+            error: this.error,
+            response: this.json
         });
     }
 }
@@ -72,19 +73,19 @@ const route = (path, callback, req, method = 'GET') => {
             let body = "";
             try {
                 // Listen for data event
-                req.on("data", (chunk) => {
-                    body += chunk.toString();
+                req.on("readable", () => {
+                    const newValue = req.read() ?? '';
+                    body += newValue;
                 });
         
                 // Listen for end event
                 req.on("end", () => {
                     body = JSON.parse(body);
+                    callback(params, body);
                 });
             } catch (error) {
-                console.log(error);
+                console.error('ERROR:', error);
             }
-
-            return callback(params, body);
         }
 
         return callback(params);
@@ -99,24 +100,33 @@ const server = createServer(async (req, res) => {
 
         players[username] = newPlayer;
 
-        res.write(new Response(newPlayer.preJSON).json);
-        res.end('', (e) => console.log('New login', username));
+        const response = new Response(newPlayer.preJSON);
+        res.end(response.toString);
         return;
     }, req);
 
     route('player', (params) => {
-        res.end(new Response(players[params.get('email')].preJSON).json);
+        const response = new Response();
+        if(players[params.get('email')]) {
+            response.json = players[params.get('email')]?.preJSON;
+        }else{
+            console.error('undefined player', players);
+            response.error = 'undefined email';
+            response.status = 400;
+        }
+        res.end(response.toString);
         return;
     }, req);
 
     route('move', (params, body) => {
-        console.log(body);
-        if(body?.action === 'move') {
-            players[params.get('email')].x = 1*body.params.x;
-            players[params.get('email')].y = 1*body.params.y;
+        if(!body) return;
+        if(body.action === 'move') {
+            players[params.get('email')].move(body.params.x, body.params.y);
         }
+        
         res.end();
         return;
     }, req, 'POST');
 });
+server.on('listening', () => console.log('Listening at: localhost:' + PORT));
 server.listen(PORT);

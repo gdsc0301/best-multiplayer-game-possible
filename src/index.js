@@ -26,8 +26,8 @@ class Player {
   x = 0;
   y = 0;
 
-  width = 5;
-  height = 5;
+  width = 20;
+  height = 20;
 
   direction = 0;
   inputAxis = {
@@ -51,10 +51,10 @@ class Player {
 
   draw() {
     const PlayerD2D = new Path2D();
-    PlayerD2D.moveTo(this.x, this.y);
-    PlayerD2D.lineTo(this.width/2, -this.height/2);
-    PlayerD2D.lineTo(this.width/2, this.height/2);
-    PlayerD2D.lineTo(-this.width, 0);
+    PlayerD2D.moveTo(this.x, this.y - this.height/2);
+    PlayerD2D.lineTo(this.x + this.width/2, this.y);
+    PlayerD2D.lineTo(this.x + -this.width, this.y);
+    PlayerD2D.lineTo(this.x, this.y - this.height/2);
     PlayerD2D.closePath();
     return PlayerD2D;
   }
@@ -68,45 +68,46 @@ let gameplayLoop;
 function init() {
   loginForm.addEventListener('submit', e => {
     e.preventDefault();
-    console.log('submit',e.target.elements[0].value);
     NewPlayer = new Player(e.target.elements[0].value);
 
-    fetch(`http://localhost:5000/login?email=${NewPlayer.username}`).then(res => {
+    canvas.focus();
+
+    fetch(getReqURL('login')).then(res => {
       res.json().then(body => {
         if(body?.status === 200) {
           NewPlayer.update(body.x,body.y,body.direction);
+          gameplayLoop = setInterval(update, 1000/60);
 
-          gameplayLoop = setInterval(update, 1000);
+          document.addEventListener('keydown', e => {
+              NewPlayer.commandsBuffer.push((new Command('down', e.key)).obj);
+            }
+          );
+
+          document.addEventListener('keyup', e => {
+              NewPlayer.commandsBuffer.push(
+                (new Command('up', e.key)).obj
+              );
+            }
+          );
+
+          document.addEventListener('keydown', e => e.key === 'Escape' ? clearInterval(gameplayLoop) : undefined);
+        }else {
+          console.error(body);
         }
       })
     });
-
-    canvas.addEventListener('keydown', e => 
-      NewPlayer.commandsBuffer.push(
-        (new Command('down', e.key).obj)
-      )
-    );
-
-    canvas.addEventListener('keyup', e => 
-      NewPlayer.commandsBuffer.push(
-        (new Command('up', e.key).obj)
-      )
-    );
-
-    document.addEventListener('keydown', e => e.key === 'Escape' ? clearInterval(gameplayLoop) : undefined);
   });
 }
 
 function getReqURL(path) {
-  return `http://localhost:5000/${path}?email=${NewPlayer.username}`;
+  return `http://localhost:6600/${path}?email=${NewPlayer.username}`;
 }
 
 function getPlayerData() {
   fetch(getReqURL('player')).then(res => {
     res.json().then(body => {
-      console.log(body);
       if(body?.status === 200) {
-        NewPlayer.update(body.x,body.y,body.direction);
+        NewPlayer.update(body.response.x,body.response.y,body.response.direction);
       }
     })
   });
@@ -119,7 +120,7 @@ function movePlayer(x,y) {
       action: 'move',
       params: {
         x: x,
-        y, y
+        y: y
       }
     })
   });
@@ -140,12 +141,20 @@ function update() {
       case 'ArrowDown':
         NewPlayer.inputAxis.y = pressing ? 1 : 0;
         break;
+
+      case 'ArrowLeft':
+        NewPlayer.inputAxis.x = pressing ? -1 : 0;
+        break;
+
+      case 'ArrowRight':
+        NewPlayer.inputAxis.x = pressing ? 1 : 0;
+        break;
       default:
         break;
     }
   }
 
-  if(NewPlayer.inputAxis !== {x:0,y:0})
+  if(NewPlayer.inputAxis.x !== 0 || NewPlayer.inputAxis.y !== 0)
     movePlayer(NewPlayer.inputAxis.x, NewPlayer.inputAxis.y);
 
   getPlayerData();
