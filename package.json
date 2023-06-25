@@ -1,0 +1,33 @@
+{
+  "name": "best-multiplayer-game-possible",
+  "version": "0.0.1",
+  "description": "The best multiplayer possible each push.",
+  "main": "index.html",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/gdsc0301/best-multiplayer-game-possible.git"
+  },
+  "keywords": [
+    "multiplayer",
+    "game",
+    "dynamic",
+    "online"
+  ],
+  "author": "Guilherme Carvalho",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gdsc0301/best-multiplayer-game-possible/issues"
+  },
+  "homepage": "https://github.com/gdsc0301/best-multiplayer-game-possible#readme",
+  "browserslist": "> 0.25%, not dead",
+  "devDependencies": {
+    "sass": "^1.63.6",
+    "vite": "^4.3.9"
+  }
+}
