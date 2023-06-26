@@ -1,81 +1,39 @@
+import { FrontEndPlayer } from './Player';
+import Command from './Command';
+import Room from '../src/Room';
+
 import './style.scss';
 
+const serverURL = 'http://localhost:6600';
+
 const loginForm = document.getElementById('loginForm');
+const emailErrorField = loginForm.querySelector('.error');
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById('app');
 const ctx = canvas.getContext('2d');
 
-class Command {
-  constructor(action, key) {
-    this.action = action;
-    this.key = key;
-  }
-
-  get obj() {
-    return {
-      action: this.action,
-      key: this.key
-    };
-  }
-}
-
-class Player {
-  username = ''
-  commandsBuffer = [];
-  x = 0;
-  y = 0;
-
-  width = 20;
-  height = 20;
-
-  direction = 0;
-  inputAxis = {
-    x: 0,
-    y: 0
-  }
-
-  constructor(username) {
-    this.username = username;
-  }
-
-  update(x,y,direction) {
-    this.x = x;
-    this.y = y;
-    this.direction = direction;
-  }
-
-  setInputAxis(x,y) {
-    this.inputAxis = {x:x,y:y};
-  }
-
-  draw() {
-    const PlayerD2D = new Path2D();
-    PlayerD2D.moveTo(this.x, this.y - this.height/2);
-    PlayerD2D.lineTo(this.x + this.width/2, this.y);
-    PlayerD2D.lineTo(this.x + -this.width, this.y);
-    PlayerD2D.lineTo(this.x, this.y - this.height/2);
-    PlayerD2D.closePath();
-    return PlayerD2D;
-  }
-};
-
-/** @type {Player} */
+/** @type {FrontEndPlayer} */
 let NewPlayer;
+
+/** @type {Room} */
+let currentRoom;
 
 let gameplayLoop;
 
 function init() {
   loginForm.addEventListener('submit', e => {
     e.preventDefault();
-    NewPlayer = new Player(e.target.elements[0].value);
+    NewPlayer = new FrontEndPlayer(e.target.elements[0].value);
 
     canvas.focus();
 
-    fetch(getReqURL('login')).then(res => {
+    fetch(`${serverURL}/login?email=${encodeURIComponent(e.target.elements[0].value)}`).then(res => {
       res.json().then(body => {
         if(body?.status === 200) {
-          NewPlayer.update(body.x,body.y,body.direction);
+          currentRoom = body.data.room;
+          NewPlayer.setRoomID(currentRoom.ID);
+          
           gameplayLoop = setInterval(update, 1000/60);
 
           document.addEventListener('keydown', e => {
@@ -90,7 +48,9 @@ function init() {
             }
           );
 
-          document.addEventListener('keydown', e => e.key === 'Escape' ? clearInterval(gameplayLoop) : undefined);
+          document.addEventListener('keydown', e => {
+            return e.key === 'Escape' ? clearInterval(gameplayLoop) : undefined;
+          });
         }else {
           console.error(body);
         }
@@ -100,14 +60,18 @@ function init() {
 }
 
 function getReqURL(path) {
-  return `http://localhost:6600/${path}?email=${NewPlayer.username}`;
+  return `${serverURL}/${path}?email=${NewPlayer.username}&room_id=${NewPlayer.currentRoomID}`;
 }
 
-function getPlayerData() {
-  fetch(getReqURL('player')).then(res => {
+function getRoomData() {
+  fetch(getReqURL('room')).then(res => {
     res.json().then(body => {
       if(body?.status === 200) {
+        currentRoom = Object()
         NewPlayer.update(body.response.x,body.response.y,body.response.direction);
+      }else {
+        emailErrorField.classList.add('active');
+        emailErrorField.innerHTML = body.error;
       }
     })
   });
@@ -129,6 +93,9 @@ function movePlayer(x,y) {
 }
 
 function update() {
+  getRoomData();
+  
+
   for(let i=0;i < NewPlayer.commandsBuffer.length; i++){
     const movement = NewPlayer.commandsBuffer.pop();
     const pressing = movement.action === 'down';
@@ -157,7 +124,6 @@ function update() {
   if(NewPlayer.inputAxis.x !== 0 || NewPlayer.inputAxis.y !== 0)
     movePlayer(NewPlayer.inputAxis.x, NewPlayer.inputAxis.y);
 
-  getPlayerData();
   draw();
 }
 

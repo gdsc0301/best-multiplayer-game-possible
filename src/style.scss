@@ -29,10 +29,26 @@ body {
   }
 
   #loginForm {
+    position: relative;
     display: flex;
     justify-content: center;
     gap: 8px;
     padding: 32px 0;
+
+    .error {
+      position: absolute;
+      top: 100%;
+      left: 0;
+
+      opacity: 0;
+
+      color: red;
+      transition-duration: 144ms;
+
+      &.active {
+        opacity: 1;
+      }
+    }
   }
 }
 

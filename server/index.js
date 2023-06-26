@@ -1,4 +1,7 @@
 import { IncomingMessage, createServer } from "node:http";
+import { Player } from '../src/Player';
+import Response, { BAD_REQUEST, OK, UNAUTHORIZED } from './src/Response';
+import Room from '../src/Room';
 
 const PORT = process.env.PORT || 6600;
 const BasicHeaders = {
@@ -7,56 +10,43 @@ const BasicHeaders = {
     "Vary": "Origin"
 };
 
-class Player {
-    #username;
-    #x;
-    #y;
-    #width = 5;
-    #height = 5;
-    #direction = 0;
+/** @type {Object.<string, Room}} */
+const rooms = {};
 
-    constructor(username) {
-        this.#username = username;
-        this.#x = 0;
-        this.#y = 0;
+/**
+ * @param {Player} player 
+ * @returns {String} The room ID
+ */
+const get_free_room_for = player => {
+    if(!Object.keys(rooms.length)) { // If ther's no room, create a new one;
+        const new_room = new Room();
+        new_room.add_player(player) ? undefined : console.error('Invalid player', player);
+
+        rooms[new_room.ID] = new_room;
+        return rooms[new_room.ID];
     }
 
-    get preJSON() {
-        return {
-            x: this.#x,
-            y: this.#y,
-            direction: this.#direction,
-            username: this.#username
-        };
+    // If there are rooms, check for an available one.
+    for(const room of rooms) {
+        if(room.is_full) continue;
+        return room;
     }
 
-    move(x,y) {
-        this.#x += x * 10;
-        this.#y += y * 10;
-    }
+    // In last case, it just creates a new room.
+    const new_room = new Room();
+    new_room.add_player(player);
+
+    rooms[new_room.ID] = new_room;
+    return new_room;
 }
 
-class Response {
-    json;
-    status;
-    error;
-
-    constructor(json = {}, status = 200, error = '') {
-        this.json = json;
-        this.status = status;
-        this.error = error;
-    }
-
-    get toString() {
-        return JSON.stringify({
-            status: this.status,
-            error: this.error,
-            response: this.json
-        });
-    }
+/**
+ * @param {String} room_id Room ID to check it out.
+ * @returns {boolean}
+ */
+const room_exist = (room_id) => {
+    return !(Object.keys(rooms).indexOf === room_id);
 }
-
-const players = {};
 
 /**
  * @param {String} path 
@@ -93,26 +83,35 @@ const route = (path, callback, req, method = 'GET') => {
 }
 
 const server = createServer(async (req, res) => {
-    res.writeHead(200, BasicHeaders);
+    res.writeHead(OK, BasicHeaders);
+    const player_email = params.get('player_email');
+    const room_id = params.get('room_id');
+
+    if(!room_exist(room_id)) {
+        res.end((new Response({}, BAD_REQUEST, 'Invalid room ID')));
+        return;
+    }
+
     route('login', (params) => {
-        const username = params.get('email');
-        const newPlayer = new Player(username);
+        const new_player = new Player(player_email);
+        const new_player_room = get_free_room_for(new_player);
 
-        players[username] = newPlayer;
-
-        const response = new Response(newPlayer.preJSON);
-        res.end(response.toString);
+        res.end((new Response({room: new_player_room})).toString);
         return;
     }, req);
 
-    route('player', (params) => {
+    route('room', (params) => {
         const response = new Response();
-        if(players[params.get('email')]) {
-            response.json = players[params.get('email')]?.preJSON;
-        }else{
-            console.error('undefined player', players);
-            response.error = 'undefined email';
-            response.status = 400;
+        if(room_id) {
+            if(rooms[room_id].player_is_here(player_email)) {
+                response.data = rooms[room_id];
+            }else {
+                response.error = "Not logged in or internal error.";
+                response.status = UNAUTHORIZED;
+            }
+        }else {
+            response.status = BAD_REQUEST;
+            response.error = "No room ID found."
         }
         res.end(response.toString);
         return;
@@ -120,11 +119,15 @@ const server = createServer(async (req, res) => {
 
     route('move', (params, body) => {
         if(!body) return;
-        if(body.action === 'move') {
-            players[params.get('email')].move(body.params.x, body.params.y);
-        }
+        let response = undefined;
+
+        const targetPlayer = rooms[room_id].get_player(player_email);
+        if(targetPlayer)
+            targetPlayer.move(body.params.x, body.params.y);
+        else
+            response = (new Response({}, BAD_REQUEST, 'Invalid player email')).toString;
         
-        res.end();
+        res.end(response);
         return;
     }, req, 'POST');
 });
