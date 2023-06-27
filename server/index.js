@@ -1,7 +1,8 @@
 import { IncomingMessage, createServer } from "node:http";
-import { Player } from '../src/Player';
-import Response, { BAD_REQUEST, OK, UNAUTHORIZED } from './src/Response';
-import Room from '../src/Room';
+import { createHash } from "node:crypto";
+import { Player } from '../src/Player.js';
+import { Response, BAD_REQUEST, OK, UNAUTHORIZED } from './src/Response.js';
+import Room from '../src/Room.js';
 
 const PORT = process.env.PORT || 6600;
 const BasicHeaders = {
@@ -10,7 +11,7 @@ const BasicHeaders = {
     "Vary": "Origin"
 };
 
-/** @type {Object.<string, Room}} */
+/** @type {Object.<string, Room>} */
 const rooms = {};
 
 /**
@@ -18,8 +19,10 @@ const rooms = {};
  * @returns {String} The room ID
  */
 const get_free_room_for = player => {
-    if(!Object.keys(rooms.length)) { // If ther's no room, create a new one;
-        const new_room = new Room();
+    if(Object.keys(rooms).length === 0) { // If ther's no room, create a new one;
+        const new_room = new Room(createHash('sha256').update(Date.now().toString()).digest('hex'));
+        player.setRoomID(new_room.ID);
+
         new_room.add_player(player) ? undefined : console.error('Invalid player', player);
 
         rooms[new_room.ID] = new_room;
@@ -27,17 +30,22 @@ const get_free_room_for = player => {
     }
 
     // If there are rooms, check for an available one.
-    for(const room of rooms) {
-        if(room.is_full) continue;
-        return room;
+    for(const room_id in rooms) {
+        if(rooms[room_id].is_full) continue;
+
+        if(rooms[room_id].add_player(player)){
+            player.setRoomID(room_id);
+            return rooms[room_id];
+        }
     }
 
     // In last case, it just creates a new room.
-    const new_room = new Room();
+    const new_room = new Room(createHash('sha256').update(Date.now().toString()).digest('hex'));
+    player.setRoomID(new_room.ID);
     new_room.add_player(player);
 
     rooms[new_room.ID] = new_room;
-    return new_room;
+    return rooms[new_room.ID];
 }
 
 /**
@@ -84,6 +92,7 @@ const route = (path, callback, req, method = 'GET') => {
 
 const server = createServer(async (req, res) => {
     res.writeHead(OK, BasicHeaders);
+    const params = new URLSearchParams(req.url.split('?')[1]);
     const player_email = params.get('player_email');
     const room_id = params.get('room_id');
 
@@ -92,27 +101,25 @@ const server = createServer(async (req, res) => {
         return;
     }
 
-    route('login', (params) => {
+    route('login', () => {
         const new_player = new Player(player_email);
         const new_player_room = get_free_room_for(new_player);
 
-        res.end((new Response({room: new_player_room})).toString);
+        res.end((new Response(new_player_room)).toString);
         return;
     }, req);
 
-    route('room', (params) => {
+    route('room', () => {
         const response = new Response();
-        if(room_id) {
-            if(rooms[room_id].player_is_here(player_email)) {
-                response.data = rooms[room_id];
-            }else {
-                response.error = "Not logged in or internal error.";
-                response.status = UNAUTHORIZED;
-            }
+        const player_is_here = rooms[room_id].player_is_here(player_email);
+        
+        if(player_is_here) {
+            response.data = rooms[room_id];
         }else {
-            response.status = BAD_REQUEST;
-            response.error = "No room ID found."
+            response.error = "Not logged in or internal error.";
+            response.status = UNAUTHORIZED;
         }
+
         res.end(response.toString);
         return;
     }, req);
@@ -130,6 +137,13 @@ const server = createServer(async (req, res) => {
         res.end(response);
         return;
     }, req, 'POST');
+
+    route('logout', () => {
+        rooms[room_id].remove_player(player_email);
+
+        res.end();
+        return;
+    }, req);
 });
 server.on('listening', () => console.log('Listening at: localhost:' + PORT));
 server.listen(PORT);

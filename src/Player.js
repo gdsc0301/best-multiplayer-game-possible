@@ -10,6 +10,12 @@ export class Player {
     speed = 10;
 
     direction = 0;
+    inputAxis = {
+        x: 0,
+        y: 0
+    }
+
+    commandsBuffer = [];
 
     constructor(username) {
         this.username = username;
@@ -50,35 +56,21 @@ export class Player {
         this.x = x;
         this.y = y;
     }
-
-    get currentRoomID() {
-        return this.currentRoomID;
-    }
-}
-
-export class FrontEndPlayer extends Player {
-    inputAxis = {
-        x: 0,
-        y: 0
-    }
-
-    commandsBuffer = [];
-
-    constructor(username) {
-        super(username);
-    }
-
+    
     draw() {
         const PlayerD2D = new Path2D();
-        PlayerD2D.moveTo(this.x, this.y - this.height/2);
-        PlayerD2D.lineTo(this.x + this.width/2, this.y);
-        PlayerD2D.lineTo(this.x + -this.width, this.y);
+        PlayerD2D.moveTo(this.x - this.width/2, this.y + this.height/2);
         PlayerD2D.lineTo(this.x, this.y - this.height/2);
+        PlayerD2D.lineTo(this.x + this.width/2, this.y + this.height/2);
         PlayerD2D.closePath();
         return PlayerD2D;
     }
 
     setInputAxis(x,y) {
         this.inputAxis = {x:x,y:y};
+    }
+
+    get currentRoomID() {
+        return this.currentRoomID;
     }
 }

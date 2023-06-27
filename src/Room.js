@@ -1,6 +1,6 @@
-import { Player } from "./Player";
+import { Player } from "./Player.js";
 
-class Room {
+export default class Room {
     ID;
     width;
     height;
@@ -13,9 +13,9 @@ class Room {
      * @param {Number} width 
      * @param {Number} height 
      */
-    constructor(width = 1000, height = 1000) {
-        this.ID = crypto.randomUUID();
+    constructor(ID, width = 1000, height = 1000) {
         this.start_timestamp = Date.now();
+        this.ID = ID;
         
         this.width = width;
         this.height = height;
@@ -33,19 +33,21 @@ class Room {
     }
 
     get is_full() {
-        return this.max_players_amount >= this.players_amount;
+        return this.max_players_amount <= this.players_amount;
     }
 
     get_free_room_position() {
-        return {x: this.width/2, y: this.y/2};
+        return {x: this.width/2, y: this.height/2};
     }
 
     /**
      * @param {Player} player Player object to be inserted at the room.
      */
     add_player(player) {
-        if(Object.keys(this.players).indexOf(player.username) === -1){
-            player.setPosition(this.get_free_room_position());
+        if(!this.player_is_here(player.username)){
+            const newPosition = this.get_free_room_position();
+            player.setPosition(newPosition.x, newPosition.y);
+
             this.players[player.username] = player;
             return true;
         }
@@ -53,12 +55,19 @@ class Room {
         return false;
     }
 
+    /**
+     * @param {string} player_username 
+     */
+    remove_player(player_username) {
+        if(this.player_is_here(player_username))
+            delete this.players[player_username];
+    }
+
     player_is_here(playerUsername) {
-        return (Object.keys(this.players).indexOf(playerUsername) === -1);
+        return !(Object.keys(this.players).indexOf(playerUsername) === -1);
     }
 
     /**
-     * 
      * @param {string} player_username Username of the player to return
      * @returns {Player|false}
      */
@@ -66,5 +75,3 @@ class Room {
         return this.player_is_here(player_username) && this.players[player_username];
     }
 }
-
-export default Room;

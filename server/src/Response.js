@@ -1,4 +1,4 @@
-class Response {
+export class Response {
     data;
     status;
     error;
@@ -30,5 +30,3 @@ export const NOT_FOUND = 404;
 export const TIMEOUT = 408;
 /** The request succeeded. */
 export const OK = 200;
-
-export default Response;
