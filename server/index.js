@@ -3,8 +3,9 @@ import { createHash } from "node:crypto";
 import { Player } from '../src/Player.js';
 import { Response, BAD_REQUEST, OK, UNAUTHORIZED } from './src/Response.js';
 import Room from '../src/Room.js';
+import { env } from "node:process";
 
-const PORT = process.env.PORT || 6600;
+const PORT = env.PORT || 6600;
 const BasicHeaders = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "http://localhost:5173",
@@ -100,6 +101,10 @@ const server = createServer(async (req, res) => {
         res.end((new Response({}, BAD_REQUEST, 'Invalid room ID')));
         return;
     }
+
+    route('', () => {
+
+    })
 
     route('login', () => {
         const new_player = new Player(player_email);
