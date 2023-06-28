@@ -20,12 +20,15 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   
   min-height: 100vh;
 
   #app {
     width: 640px;
     height: 360px;
+
+    border: 1px solid white;
   }
 
   #loginForm {

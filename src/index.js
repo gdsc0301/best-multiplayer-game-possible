@@ -8,6 +8,7 @@ const serverURL = 'http://localhost:6600';
 
 const loginForm = document.getElementById('loginForm');
 const emailErrorField = loginForm.querySelector('.error');
+const welcomeMessage = document.querySelector('.welcomeMessage');
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById('app');
@@ -31,10 +32,10 @@ function init() {
     fetch(`${serverURL}/login?player_email=${encodeURIComponent(username)}`).then(res => {
       res.json().then(body => {
         if(body?.status === 200) {
+          welcomeMessage.innerHTML = 'Welcome, '+username;
           currentRoom = body.data;
           parseRoomPlayers();
           LocalPlayer = currentRoom.players[username];
-          console.log(LocalPlayer, currentRoom, username, body.data);
           
           gameplayLoop = setInterval(update, 1000/60);
 
@@ -58,6 +59,7 @@ function init() {
             return fetch(getReqURL('logout')).then(() => {return true;});
           });
         }else {
+          welcomeMessage.innerHTML = 'Login failed, try again later';
           console.error(body);
         }
       })

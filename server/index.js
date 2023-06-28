@@ -103,8 +103,8 @@ const server = createServer(async (req, res) => {
     }
 
     route('', () => {
-
-    })
+        
+    }, req);
 
     route('login', () => {
         const new_player = new Player(player_email);
