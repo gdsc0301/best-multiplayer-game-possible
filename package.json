@@ -1,13 +1,16 @@
 {
   "name": "best-multiplayer-game-possible",
-  "version": "0.0.1",
-  "description": "The best multiplayer possible each push.",
-  "main": "index.html",
+  "version": "0.0.5",
+  "description": "The best multiplayer game possible each 'git push'.",
+  "main": "./server/index.js",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
+  },
+  "engines": {
+    "node": ">=20.3.1"
   },
   "repository": {
     "type": "git",

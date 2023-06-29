@@ -18,6 +18,8 @@ export class Response {
     }
 }
 
+/** The server is responsible for some error. */
+export const INTERNAL_ERROR = 500;
 /** The server cannot or will not process the request due to something that is perceived to be a client error. */
 export const BAD_REQUEST = 400;
 /** Although the HTTP standard specifies "unauthorized", semantically this response means "unauthenticated". That is, the client must authenticate itself to get the requested response. */

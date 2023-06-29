@@ -56,6 +56,7 @@ function init() {
           });
 
           window.addEventListener('beforeunload', () => {
+            clearInterval(gameplayLoop);
             return fetch(getReqURL('logout')).then(() => {return true;});
           });
         }else {
@@ -114,6 +115,7 @@ function movePlayer(x,y) {
 function update() {
   getRoomData();
   
+  // Get keys
   for(let i=0;i < LocalPlayer.commandsBuffer.length; i++){
     const movement = LocalPlayer.commandsBuffer.pop();
     const pressing = movement.action === 'down';
@@ -150,8 +152,11 @@ function draw() {
   ctx.strokeStyle = 'orange';
 
   for(const player_id in currentRoom.players) {
-    ctx.stroke(currentRoom.players[player_id].draw());
+    ctx.stroke(currentRoom.players[player_id].draw(ctx, canvas.width, canvas.height, LocalPlayer));
   }
+
+  ctx.strokeStyle = 'white';
+  ctx.strokeRect(-LocalPlayer.x, -LocalPlayer.y, currentRoom.width, currentRoom.height);
 }
 
 init();
