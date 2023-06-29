@@ -30,5 +30,8 @@ jobs:
           node-version-file: '.nvmrc'
 
       # Runs a single command using the runners shell
-      - name: Run a one-line script
+      - name: Build the project
         run: npm install && npm run build
+        
+      - name: Runs node
+        run: cd server && node index.js
