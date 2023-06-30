@@ -13,32 +13,53 @@ export class Player {
     speed = 10;
 
     direction = 0;
-    inputAxis = {
+
+    #inputAxis = {
         x: 0,
         y: 0
     }
-
-    commandsBuffer = [];
 
     constructor(username) {
         this.username = username;
     }
 
     /**
-     * @param {Player} serverUpdatedPlayer 
+     * @param {string} key The key to check
+     * @param {boolean} pressing Is pressing or releasing that key?
      */
-    update(serverUpdatedPlayer) {
-        this.username = serverUpdatedPlayer.username;
-        this.currentRoomID = serverUpdatedPlayer.currentRoomID;
-        this.x = serverUpdatedPlayer.x;
-        this.y = serverUpdatedPlayer.y;
+    #defineAxis(key, pressing) {
+        switch (key) {
+            case 'ArrowUp':
+                this.#inputAxis.y = pressing ? -1 : 0;
+                break;
+        
+            case 'ArrowDown':
+                this.#inputAxis.y = pressing ? 1 : 0;
+                break;
+        
+            case 'ArrowLeft':
+                this.#inputAxis.x = pressing ? -1 : 0;
+                break;
+        
+            case 'ArrowRight':
+                this.#inputAxis.x = pressing ? 1 : 0;
+                break;
+            
+            default:
+            break;
+        }
+    }
 
-        this.width = serverUpdatedPlayer.width;
-        this.height = serverUpdatedPlayer.height;
+    initInputEvents() {
+        document.addEventListener('keydown', e => {
+            this.#defineAxis(e.key, true);
+          }
+        );
 
-        this.speed = serverUpdatedPlayer.speed;
-
-        this.direction = serverUpdatedPlayer.direction;
+        document.addEventListener('keyup', e => {
+            this.#defineAxis(e.key, false);
+          }
+        );
     }
 
     setRoomID(roomID) {
@@ -50,16 +71,16 @@ export class Player {
         return false;
     }
 
-    move(axis_x,axis_y) {
-        this.x += axis_x * this.speed;
-        this.y += axis_y * this.speed;
+    move() {
+        this.x += this.#inputAxis.x * this.speed;
+        this.y += this.#inputAxis.y * this.speed;
     }
 
     setPosition(x,y) {
         this.x = x;
         this.y = y;
     }
-    
+
     /**
      * @param {CanvasRenderingContext2D} ctx 
      * @param {number} canvasWidth 
@@ -84,6 +105,8 @@ export class Player {
         PlayerD2D.lineTo(thisPos.x + this.width/2, thisPos.y + this.height/2);
         PlayerD2D.closePath();
 
+        ctx.stroke(PlayerD2D);
+
         ctx.fillStyle = this.usernameStyle;
         ctx.fillText(this.username, thisPos.x, thisPos.y - this.height - 12);
 
@@ -91,7 +114,7 @@ export class Player {
     }
 
     setInputAxis(x,y) {
-        this.inputAxis = {x:x,y:y};
+        this.#inputAxis = {x:x,y:y};
     }
 
     get currentRoomID() {

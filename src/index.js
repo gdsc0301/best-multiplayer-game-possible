@@ -32,39 +32,56 @@ function init() {
     fetch(`${serverURL}/login?player_email=${encodeURIComponent(username)}`).then(res => {
       res.json().then(body => {
         if(body?.status === 200) {
-          welcomeMessage.innerHTML = 'Welcome, '+username;
-          currentRoom = body.data;
+          currentRoom = Object.assign((new Room(body.data.ID)), structuredClone(body.data));
+          LocalPlayer = Object.assign((new Player(username)), structuredClone(currentRoom.players[username]));
           parseRoomPlayers();
-          LocalPlayer = currentRoom.players[username];
-          
-          gameplayLoop = setInterval(update, 1000/60);
 
           document.addEventListener('keydown', e => {
-              LocalPlayer.commandsBuffer.push((new Command('down', e.key)).obj);
+              if(e.key === 'Escape') { // On press esc, stop game
+                clearInterval(gameplayLoop);
+                return;
+              }
             }
           );
 
-          document.addEventListener('keyup', e => {
-              LocalPlayer.commandsBuffer.push(
-                (new Command('up', e.key)).obj
-              );
-            }
-          );
-
-          document.addEventListener('keydown', e => {
-            return e.key === 'Escape' ? clearInterval(gameplayLoop) : undefined;
-          });
+          LocalPlayer.initInputEvents();
 
           window.addEventListener('beforeunload', () => {
-            clearInterval(gameplayLoop);
-            return fetch(getReqURL('logout')).then(() => {return true;});
+            if(gameplayLoop){
+              fetch(getReqURL('logout'));
+              clearInterval(gameplayLoop);
+            }
+            return;
           });
+
+          welcomeMessage.innerHTML = 'Welcome, ' + username;
+          gameplayLoop = setInterval(update, 1000/60);
         }else {
           welcomeMessage.innerHTML = 'Login failed, try again later';
+          clearInterval(gameplayLoop);
           console.error(body);
         }
       })
     });
+  });
+}
+
+function getReqURL(path) {
+  return `${serverURL}/${path}?player_email=${LocalPlayer.username}&room_id=${LocalPlayer.currentRoomID}`;
+}
+
+function getRoomData() {
+  fetch(getReqURL('room')).then(res => {
+    res.json().then(body => {
+      if(body?.status === 200) {
+        currentRoom = Object.assign(currentRoom, body.data);
+        parseRoomPlayers();
+      }else {
+        emailErrorField.classList.add('active');
+        emailErrorField.innerHTML = body.error;
+        clearInterval(gameplayLoop);
+      }
+    })
   });
 }
 
@@ -76,36 +93,12 @@ function parseRoomPlayers() {
   }
 }
 
-function getReqURL(path) {
-  return `${serverURL}/${path}?player_email=${LocalPlayer.username}&room_id=${LocalPlayer.currentRoomID}`;
-}
-
-function getRoomData() {
-  fetch(getReqURL('room')).then(res => {
-    res.json().then(body => {
-      if(body?.status === 200) {
-        const updated_room = body.data;
-        currentRoom = Object.assign(currentRoom, updated_room);
-        parseRoomPlayers();
-        LocalPlayer.update(currentRoom.players[LocalPlayer.username]);
-      }else {
-        emailErrorField.classList.add('active');
-        emailErrorField.innerHTML = body.error;
-        clearInterval(gameplayLoop);
-      }
-    })
-  });
-}
-
-function movePlayer(x,y) {
-  const req = new Request(getReqURL('move'), {
+function sendPlayerToServer() {
+  const req = new Request(getReqURL('player_update'), {
     method: 'POST',
     body: JSON.stringify({
-      action: 'move',
-      params: {
-        x: x,
-        y: y
-      }
+      action: 'player_update',
+      params: LocalPlayer
     })
   });
 
@@ -115,44 +108,22 @@ function movePlayer(x,y) {
 function update() {
   getRoomData();
   
-  // Get keys
-  for(let i=0;i < LocalPlayer.commandsBuffer.length; i++){
-    const movement = LocalPlayer.commandsBuffer.pop();
-    const pressing = movement.action === 'down';
+  LocalPlayer.move();
 
-    switch (movement.key) {
-      case 'ArrowUp':
-        LocalPlayer.inputAxis.y = pressing ? -1 : 0;
-        break;
-    
-      case 'ArrowDown':
-        LocalPlayer.inputAxis.y = pressing ? 1 : 0;
-        break;
-
-      case 'ArrowLeft':
-        LocalPlayer.inputAxis.x = pressing ? -1 : 0;
-        break;
-
-      case 'ArrowRight':
-        LocalPlayer.inputAxis.x = pressing ? 1 : 0;
-        break;
-      default:
-        break;
-    }
-  }
-
-  if(LocalPlayer.inputAxis.x !== 0 || LocalPlayer.inputAxis.y !== 0)
-    movePlayer(LocalPlayer.inputAxis.x, LocalPlayer.inputAxis.y);
-
+  sendPlayerToServer();
   draw();
 }
 
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.strokeStyle = 'orange';
 
+  LocalPlayer.draw(ctx, canvas.width, canvas.height, LocalPlayer);
   for(const player_id in currentRoom.players) {
-    ctx.stroke(currentRoom.players[player_id].draw(ctx, canvas.width, canvas.height, LocalPlayer));
+    if(player_id === LocalPlayer.username) continue;
+
+    currentRoom.players[player_id].draw(
+      ctx, canvas.width, canvas.height, LocalPlayer
+    )
   }
 
   ctx.strokeStyle = 'white';

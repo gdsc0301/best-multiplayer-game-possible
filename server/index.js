@@ -21,9 +21,9 @@ const rooms = {};
 
 /**
  * @param {Player} player 
- * @returns {String} The room ID
+ * @returns {Room} The room with the player
  */
-const get_free_room_for = player => {
+const assign_room_for = player => {
     if(Object.keys(rooms).length === 0) { // If ther's no room, create a new one;
         const new_room = new Room(createHash('sha256').update(Date.now().toString()).digest('hex'));
         player.setRoomID(new_room.ID);
@@ -102,7 +102,6 @@ const get_headers = (content_type) => {
 }
 
 const server = createServer(async (req, res) => {
-    console.log(req.headers);
     const req_url = new URL(`http://${req.headers.host}${req.url}`);
 
     const player_email = req_url.searchParams.get('player_email');
@@ -140,7 +139,7 @@ const server = createServer(async (req, res) => {
 
     route('/login', () => {
         const new_player = new Player(player_email);
-        const new_player_room = get_free_room_for(new_player);
+        const new_player_room = assign_room_for(new_player);
 
         res.writeHead(OK, BasicHeaders);
         res.end((new Response(new_player_room)).toString);
@@ -163,13 +162,13 @@ const server = createServer(async (req, res) => {
         return;
     }, req);
 
-    route('/move', (params, body) => {
+    route('/player_update', (params, body) => {
         if(!body) return;
         let response = undefined;
 
         const targetPlayer = rooms[room_id].get_player(player_email);
         if(targetPlayer)
-            targetPlayer.move(body.params.x, body.params.y);
+            targetPlayer.setPosition(body.params.x, body.params.y);
         else
             response = (new Response({}, BAD_REQUEST, 'Invalid player email')).toString;
         
