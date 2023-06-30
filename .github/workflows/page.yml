@@ -13,7 +13,8 @@ permissions:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
 
-  build:
+  deploy:
+    name: Build and Deploy
     runs-on: ubuntu-latest
 
     steps:
@@ -29,12 +30,7 @@ jobs:
       # Runs a single command using the runners shell
       - name: Build the project
         run: npm ci && npm run build
-  
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
 
-    steps:
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
