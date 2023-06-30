@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "engines": {
-    "node": ">=20.3.1"
+    "node": ">=18.16.0"
   },
   "repository": {
     "type": "git",
