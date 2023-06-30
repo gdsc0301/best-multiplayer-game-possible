@@ -12,8 +12,8 @@ permissions:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  checkout:
+
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,11 +21,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-  build:
-    needs: checkout
-    runs-on: ubuntu-latest
-
-    steps:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
