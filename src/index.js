@@ -4,7 +4,15 @@ import Room from '../src/Room';
 
 import './style.scss';
 
-const serverURL = 'http://localhost:6600';
+const server = {
+  /** @type {String} */
+  ipAddress: undefined,
+  get URL() {
+    if(!this.ipAddress) return false;
+
+    return `http://${this.ipAddress}`;
+  }
+};
 
 const loginForm = document.getElementById('loginForm');
 const emailErrorField = loginForm.querySelector('.error');
@@ -21,59 +29,69 @@ let LocalPlayer;
 let currentRoom;
 
 let gameplayLoop;
-
 function init() {
   loginForm.addEventListener('submit', e => {
     e.preventDefault();
-    canvas.focus();
 
-    const username = e.target.elements[0].value;
+    server.ipAddress = e.target.elements[0].value;
+    const username = e.target.elements[1].value;
 
-    fetch(`${serverURL}/login?player_email=${encodeURIComponent(username)}`).then(res => {
-      res.json().then(body => {
-        if(body?.status === 200) {
-          currentRoom = Object.assign((new Room(body.data.ID)), structuredClone(body.data));
-          LocalPlayer = Object.assign((new Player(username)), structuredClone(currentRoom.players[username]));
-          parseRoomPlayers();
+    console.log(server, username);
+    if(server.URL && username) {
+      fetch(`${server.URL}/login?player_email=${encodeURIComponent(username)}`).then(res => {
+        res.json().then(body => {
+          if(body?.status === 200) {
+            canvas.focus({preventScroll: true});
+            emailErrorField.classList.remove('active');
 
-          document.addEventListener('keydown', e => {
-              if(e.key === 'Escape') { // On press esc, stop game
-                clearInterval(gameplayLoop);
-                return;
+            currentRoom = Object.assign((new Room(body.data.ID)), structuredClone(body.data));
+            LocalPlayer = Object.assign((new Player(username)), structuredClone(currentRoom.players[username]));
+            parseRoomPlayers();
+
+            LocalPlayer.initInputEvents();
+
+            document.addEventListener('keydown', e => {
+                if(e.key === 'Escape') { // On press esc, stop game
+                  clearInterval(gameplayLoop);
+                  return;
+                }
               }
-            }
-          );
+            );
 
-          LocalPlayer.initInputEvents();
+            window.addEventListener('beforeunload', () => {
+              if(gameplayLoop){
+                fetch(getReqURL('logout'));
+                clearInterval(gameplayLoop);
+              }
+              return;
+            });
 
-          window.addEventListener('beforeunload', () => {
-            if(gameplayLoop){
-              fetch(getReqURL('logout'));
-              clearInterval(gameplayLoop);
-            }
-            return;
-          });
-
-          welcomeMessage.innerHTML = 'Welcome, ' + username;
-          gameplayLoop = setInterval(update, 1000/60);
-        }else {
-          welcomeMessage.innerHTML = 'Login failed, try again later';
-          clearInterval(gameplayLoop);
-          console.error(body);
-        }
-      })
-    });
+            welcomeMessage.innerHTML = 'Welcome, ' + username;
+            gameplayLoop = setInterval(update, 1000/60);
+          }else {
+            emailErrorField.innerHTML = 'Login failed, try again later';
+            emailErrorField.classList.add('active');
+            clearInterval(gameplayLoop);
+            console.error(body);
+          }
+        })
+      });
+    }else {
+      emailErrorField.innerHTML = 'Invalid IP address or Username';
+      emailErrorField.classList.add('active');
+    }
   });
 }
 
 function getReqURL(path) {
-  return `${serverURL}/${path}?player_email=${LocalPlayer.username}&room_id=${LocalPlayer.currentRoomID}`;
+  return `${server.URL}/${path}?player_email=${LocalPlayer.username}&room_id=${LocalPlayer.currentRoomID}`;
 }
 
 function getRoomData() {
   fetch(getReqURL('room')).then(res => {
     res.json().then(body => {
       if(body?.status === 200) {
+        emailErrorField.classList.remove('active');
         currentRoom = Object.assign(currentRoom, body.data);
         parseRoomPlayers();
       }else {
