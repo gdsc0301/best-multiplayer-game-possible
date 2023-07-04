@@ -1,16 +1,16 @@
-import { IncomingMessage, createServer } from "node:http";
 import { createHash } from "node:crypto";
 import { Player } from '../src/Player.js';
-import { Response, BAD_REQUEST, OK, UNAUTHORIZED, INTERNAL_ERROR, NOT_FOUND } from './src/Response.js';
+import { Response, BAD_REQUEST, OK, UNAUTHORIZED } from './src/Response.js';
 import Room from '../src/Room.js';
 
-import { URL } from "node:url";
+import express from 'express';
+
+const app = express();
 
 const PORT = parseInt(process.env.PORT) || 6600;
 const BasicHeaders = {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "http://localhost:5173",
-    "Vary": "Origin"
+    "Access-Control-Allow-Origin": '*'
 };
 
 /** @type {Object.<string, Room>} */
@@ -58,39 +58,6 @@ const room_exist = (room_id) => {
     return !(Object.keys(rooms).indexOf === room_id);
 }
 
-/**
- * @param {String} path 
- * @param {CallableFunction} callback 
- * @param {IncomingMessage} req 
- * @param {'GET'|'POST'} method
- */
-const route = (target_path, callback, req, method = 'GET') => {
-    const req_url = new URL(`http://${req.headers.host}${req.url}`);
-
-    if(req_url.pathname === target_path && req.method === method) {
-        if(method === 'POST') {
-            let body = "";
-            try {
-                // Listen for data event
-                req.on("readable", () => {
-                    const newValue = req.read() ?? '';
-                    body += newValue;
-                });
-        
-                // Listen for end event
-                req.on("end", () => {
-                    body = JSON.parse(body);
-                    callback(req_url.searchParams, body);
-                });
-            } catch (error) {
-                console.error('ERROR:', error);
-            }
-        }
-
-        return callback(req_url.searchParams);
-    }
-}
-
 const get_headers = (content_type) => {
     return {
         ...BasicHeaders,
@@ -98,70 +65,79 @@ const get_headers = (content_type) => {
     };
 }
 
-const server = createServer(async (req, res) => {
-    const req_url = new URL(`http://${req.headers.host}${req.url}`);
-
-    const player_email = req_url.searchParams.get('player_email');
-    const room_id = req_url.searchParams.get('room_id');
-
-    if(!room_exist(room_id)) {
+app.use((req, res, next) => {
+    console.log(req.params);
+    if(!room_exist(req.params['room_id'])) {
         res.writeHead(OK, BasicHeaders);
         res.end((new Response({}, BAD_REQUEST, 'Invalid room ID')));
         return;
     }
-
-    route('/', () => {
-        res.writeHead(OK, BasicHeaders);
-        res.end('This is the BMGP server');
-    }, req);
-
-    route('/login', () => {
-        const new_player = new Player(player_email);
-        const new_player_room = assign_room_for(new_player);
-
-        res.writeHead(OK, BasicHeaders);
-        res.end((new Response(new_player_room)).toString);
-        return;
-    }, req);
-
-    route('/room', () => {
-        const response = new Response();
-        const player_is_here = rooms[room_id].player_is_here(player_email);
-        
-        if(player_is_here) {
-            response.data = rooms[room_id];
-        }else {
-            response.error = "Not logged in or internal error.";
-            response.status = UNAUTHORIZED;
-        }
-
-        res.writeHead(OK, BasicHeaders);
-        res.end(response.toString);
-        return;
-    }, req);
-
-    route('/player_update', (params, body) => {
-        if(!body) return;
-        let response = undefined;
-
-        const targetPlayer = rooms[room_id].get_player(player_email);
-        if(targetPlayer)
-            targetPlayer.setPosition(body.params.x, body.params.y);
-        else
-            response = (new Response({}, BAD_REQUEST, 'Invalid player email')).toString;
-        
-        res.writeHead(OK, BasicHeaders);
-        res.end(response);
-        return;
-    }, req, 'POST');
-
-    route('/logout', () => {
-        rooms[room_id].remove_player(player_email);
-
-        res.writeHead(OK, BasicHeaders);
-        res.end();
-        return;
-    }, req);
+    next();
 });
-server.on('listening', () => console.log('Listening at: http://localhost:' + PORT));
-server.listen(PORT);
+
+app.get('/', (req, res) => {
+    res.writeHead(OK, BasicHeaders);
+    res.end('This is the BMGP server');
+});
+
+app.get('/login', (req, res) => {
+    const player_email = req.params['player_email'];
+
+    const new_player = new Player(player_email);
+    const new_player_room = assign_room_for(new_player);
+
+    res.writeHead(OK, BasicHeaders);
+    res.end((new Response(new_player_room)).toString);
+    return;
+});
+
+app.get('/room', (req, res) => {
+    const player_email = req.params['player_email'];
+    const room_id = req.params['room_id'];
+
+    const response = new Response();
+    const player_is_here = rooms[room_id].player_is_here(player_email);
+    
+    if(player_is_here) {
+        response.data = rooms[room_id];
+    }else {
+        response.error = "Not logged in or internal error.";
+        response.status = UNAUTHORIZED;
+    }
+
+    res.writeHead(OK, BasicHeaders);
+    res.end(response.toString);
+    return;
+});
+
+app.post('/player_update', (req, res) => {
+    const player_email = req.params['player_email'];
+    const room_id = req.params['room_id'];
+
+    const body = req.body;
+    if(!body) return;
+    let response = undefined;
+
+    const targetPlayer = rooms[room_id].get_player(player_email);
+    if(targetPlayer)
+        targetPlayer.setPosition(body.params.x, body.params.y);
+    else
+        response = (new Response({}, BAD_REQUEST, 'Invalid player email')).toString;
+    
+    res.writeHead(OK, BasicHeaders);
+    res.end(response);
+    return;
+});
+
+app.get('/logout', (req, res) => {
+    const player_email = req.params['player_email'];
+    const room_id = req.params['room_id'];
+
+    rooms[room_id].remove_player(player_email);
+
+    res.writeHead(OK, BasicHeaders);
+    res.end();
+    return;
+});
+
+app.listen(PORT, () => console.log('Listening at: http://localhost:' + PORT));
