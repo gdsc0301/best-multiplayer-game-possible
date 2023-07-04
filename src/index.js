@@ -9,7 +9,7 @@ const server = {
   get URL() {
     if(!this.ipAddress) return false;
 
-    return `http://${this.ipAddress}`;
+    return this.ipAddress;
   }
 };
 
@@ -34,7 +34,7 @@ let currentRoom;
 
 let gameplayLoop;
 function init() {
-  welcomeMessage.innerHTML = 'Insert your username to start';
+  welcomeMessage.innerHTML = 'Insert the IP address and your Username to start';
 
   loginForm.addEventListener('submit', e => {
     e.preventDefault();
