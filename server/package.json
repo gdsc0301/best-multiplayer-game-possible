@@ -5,9 +5,11 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Yeah, working propperly.\" && exit 1",
     "start": "node index.js"
   },
   "author": "Guilherme Carvalho",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
 }

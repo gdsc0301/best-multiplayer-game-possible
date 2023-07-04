@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docker-build": "docker build -t game-server . && docker run -dp 127.0.0.1:8080:8080 game-server"
   },
   "engines": {
     "node": ">=18.16.0"
