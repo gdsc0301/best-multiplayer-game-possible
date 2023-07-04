@@ -34,22 +34,22 @@ let currentRoom;
 
 let gameplayLoop;
 function init() {
-  welcomeMessage.innerHTML = 'Insert the IP address and username to start';
-  
+  welcomeMessage.innerHTML = 'Insert your username to start';
+
   loginForm.addEventListener('submit', e => {
     e.preventDefault();
 
     server.ipAddress = e.target.elements[0].value;
     const username = e.target.elements[1].value;
 
-    Object.keys(e.target.elements).forEach(elm => {
-      e.target.elements[elm].setAttribute('disabled', '');
-    })
-
     if(server.URL && username) {
       fetch(`${server.URL}/login?player_email=${encodeURIComponent(username)}`).then(res => {
         res.json().then(body => {
           if(body?.status === 200) {
+            Object.keys(e.target.elements).forEach(elm => {
+              e.target.elements[elm].setAttribute('disabled', '');
+            });
+
             canvas.focus({preventScroll: true});
             emailErrorField.classList.remove('active');
 
