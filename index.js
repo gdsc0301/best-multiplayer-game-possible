@@ -5,7 +5,7 @@ import Room from './src/Room.js';
 
 import express from 'express';
 
-const ALLOW_ACCESS_ORIGINS = ['http://localhost:5173', 'https://gdsc0301.github.io/best-multiplayer-game-possible'];
+const ALLOW_ACCESS_ORIGINS = ['http://localhost:5173', 'https://gdsc0301.github.io'];
 
 const app = express();
 
