@@ -4,11 +4,8 @@ import { Player } from '../src/Player.js';
 import { Response, BAD_REQUEST, OK, UNAUTHORIZED, INTERNAL_ERROR, NOT_FOUND } from './src/Response.js';
 import Room from '../src/Room.js';
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 import { URL } from "node:url";
 
-const base_dir = path.resolve('../dist');
 const PORT = parseInt(process.env.PORT) || 6600;
 const BasicHeaders = {
     "Content-Type": "application/json",
@@ -114,27 +111,8 @@ const server = createServer(async (req, res) => {
     }
 
     route('/', () => {
-        const filename = req_url.pathname === '/' ? '/index.html' : req_url.pathname;
-
-        try {
-            const fs_path = base_dir + path.normalize(filename);
-            
-            const file_stream = fs.createReadStream(fs_path);
-            file_stream.pipe(res);
-            file_stream.on('open', () => {
-                res.writeHead(OK, get_headers('text/html'));
-            });
-            file_stream.on('error', err => {
-                res.writeHead(NOT_FOUND, get_headers('text/html'));
-                res.write(err.message);
-                res.end();
-            });
-        } catch(err) {
-            console.error(err);
-            res.writeHead(NOT_FOUND, get_headers('text/html'));
-            res.write(err.message);
-            res.end();
-        }
+        res.writeHead(OK, BasicHeaders);
+        res.end('This is the BMGP server');
     }, req);
 
     route('/login', () => {
