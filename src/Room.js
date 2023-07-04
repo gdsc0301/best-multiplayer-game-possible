@@ -5,7 +5,7 @@ export default class Room {
     width;
     height;
     players = {};
-    max_players_amount = 2;
+    max_players_amount = 128;
     start_timestamp;
 
     /**
