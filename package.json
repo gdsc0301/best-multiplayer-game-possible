@@ -1,13 +1,14 @@
 {
   "name": "best-multiplayer-game-possible",
-  "version": "0.0.5",
+  "version": "0.1",
   "description": "The best multiplayer game possible each 'git push'.",
-  "main": "./server/index.js",
+  "main": "index.js",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "start": "node index.js",
     "docker-build": "docker build -t game-server . && docker run -dp 127.0.0.1:8080:8080 game-server"
   },
   "engines": {
@@ -33,5 +34,8 @@
   "devDependencies": {
     "sass": "^1.63.6",
     "vite": "^4.3.9"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
   }
 }

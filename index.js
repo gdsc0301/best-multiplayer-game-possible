@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import { Player } from '../src/Player.js';
+import { Player } from './src/Player.js';
 import { Response, BAD_REQUEST, OK, UNAUTHORIZED } from './src/Response.js';
-import Room from '../src/Room.js';
+import Room from './src/Room.js';
 
 import express from 'express';
 
