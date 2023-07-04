@@ -5,12 +5,16 @@ import Room from '../src/Room.js';
 
 import express from 'express';
 
+const ALLOW_ACCESS_ORIGINS = ['http://localhost:5173', 'https://gdsc0301.github.io/best-multiplayer-game-possible'];
+
 const app = express();
 
-const PORT = parseInt(process.env.PORT) || 6600;
+const PORT = parseInt(process.env.PORT) || 8080;
 const BasicHeaders = {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": '*'
+    "Vary": "Origin",
+    "Access-Control-Allow-Methods": ["POST", "GET"],
+    "Access-Control-Allow-Credentials": "true"
 };
 
 /** @type {Object.<string, Room>} */
@@ -58,42 +62,48 @@ const room_exist = (room_id) => {
     return !(Object.keys(rooms).indexOf === room_id);
 }
 
-const get_headers = (content_type) => {
-    return {
-        ...BasicHeaders,
-        ...{"Content-Type": content_type}
-    };
+const get_headers = (origin) => {
+    console.log(origin, ALLOW_ACCESS_ORIGINS.indexOf(origin));
+    if(ALLOW_ACCESS_ORIGINS.indexOf(origin) === -1) {
+        return BasicHeaders;
+    }else {
+        return {
+            ...BasicHeaders,
+            ...{"Access-Control-Allow-Origin": origin}
+        };
+    }
 }
 
 app.use((req, res, next) => {
-    console.log(req.params);
-    if(!room_exist(req.params['room_id'])) {
-        res.writeHead(OK, BasicHeaders);
-        res.end((new Response({}, BAD_REQUEST, 'Invalid room ID')));
+    if(req.query['room_id'] && !room_exist(req.query['room_id'])) {
+        res.set(get_headers(req.headers.origin));
+        res.status(BAD_REQUEST).json((new Response({}, BAD_REQUEST, 'Invalid room ID')));
         return;
     }
     next();
 });
 
+app.use(express.text());
+
 app.get('/', (req, res) => {
-    res.writeHead(OK, BasicHeaders);
+    res.set(get_headers(req.headers.origin));
     res.end('This is the BMGP server');
 });
 
 app.get('/login', (req, res) => {
-    const player_email = req.params['player_email'];
+    const player_email = req.query['player_email'];
 
     const new_player = new Player(player_email);
     const new_player_room = assign_room_for(new_player);
 
-    res.writeHead(OK, BasicHeaders);
-    res.end((new Response(new_player_room)).toString);
+    res.set(get_headers(req.headers.origin));
+    res.status(OK).json((new Response(new_player_room)));
     return;
 });
 
 app.get('/room', (req, res) => {
-    const player_email = req.params['player_email'];
-    const room_id = req.params['room_id'];
+    const player_email = req.query['player_email'];
+    const room_id = req.query['room_id'];
 
     const response = new Response();
     const player_is_here = rooms[room_id].player_is_here(player_email);
@@ -105,37 +115,43 @@ app.get('/room', (req, res) => {
         response.status = UNAUTHORIZED;
     }
 
-    res.writeHead(OK, BasicHeaders);
-    res.end(response.toString);
+    res.set(get_headers(req.headers.origin));
+    res.status(OK).json(response);
     return;
 });
 
 app.post('/player_update', (req, res) => {
-    const player_email = req.params['player_email'];
-    const room_id = req.params['room_id'];
+    const player_email = req.query['player_email'];
+    const room_id = req.query['room_id'];
 
-    const body = req.body;
-    if(!body) return;
     let response = undefined;
+    const body = JSON.parse(req.body);
+    if(!body) {
+        response = new Response(req.body, BAD_REQUEST, 'Invalid player data')
+        res.set(get_headers(req.headers.origin));
+        res.status(BAD_REQUEST).json(response);
+        return;
+    }else {
+        res.set(get_headers(req.headers.origin));
+    }
 
     const targetPlayer = rooms[room_id].get_player(player_email);
     if(targetPlayer)
         targetPlayer.setPosition(body.params.x, body.params.y);
     else
-        response = (new Response({}, BAD_REQUEST, 'Invalid player email')).toString;
+        response = (new Response({}, BAD_REQUEST, 'Invalid player email'));
     
-    res.writeHead(OK, BasicHeaders);
-    res.end(response);
+    res.status(OK).json(response);
     return;
 });
 
 app.get('/logout', (req, res) => {
-    const player_email = req.params['player_email'];
-    const room_id = req.params['room_id'];
+    const player_email = req.query['player_email'];
+    const room_id = req.query['room_id'];
 
-    rooms[room_id].remove_player(player_email);
+    rooms[room_id]?.remove_player(player_email);
 
-    res.writeHead(OK, BasicHeaders);
+    res.set(get_headers(req.headers.origin));
     res.end();
     return;
 });

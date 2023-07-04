@@ -1,5 +1,4 @@
 import { Player } from './Player';
-import Command from './Command';
 import Room from '../src/Room';
 
 import './style.scss';
@@ -14,6 +13,11 @@ const server = {
   }
 };
 
+const BasicHeaders = {
+  "Content-Type": "text/plain",
+};
+
+/** @type {HTMLFormElement} */
 const loginForm = document.getElementById('loginForm');
 const emailErrorField = loginForm.querySelector('.error');
 const welcomeMessage = document.querySelector('.welcomeMessage');
@@ -30,13 +34,18 @@ let currentRoom;
 
 let gameplayLoop;
 function init() {
+  welcomeMessage.innerHTML = 'Insert the IP address and username to start';
+  
   loginForm.addEventListener('submit', e => {
     e.preventDefault();
 
     server.ipAddress = e.target.elements[0].value;
     const username = e.target.elements[1].value;
 
-    console.log(server, username);
+    Object.keys(e.target.elements).forEach(elm => {
+      e.target.elements[elm].setAttribute('disabled', '');
+    })
+
     if(server.URL && username) {
       fetch(`${server.URL}/login?player_email=${encodeURIComponent(username)}`).then(res => {
         res.json().then(body => {
@@ -52,6 +61,11 @@ function init() {
 
             document.addEventListener('keydown', e => {
                 if(e.key === 'Escape') { // On press esc, stop game
+                  Object.keys(loginForm.elements).forEach(elm => {
+                    loginForm.elements[elm].removeAttribute('disabled', '');
+                  });
+
+                  welcomeMessage.innerHTML = 'Insert the IP address and username to start';
                   clearInterval(gameplayLoop);
                   return;
                 }
@@ -114,6 +128,7 @@ function parseRoomPlayers() {
 function sendPlayerToServer() {
   const req = new Request(getReqURL('player_update'), {
     method: 'POST',
+    headers: BasicHeaders,
     body: JSON.stringify({
       action: 'player_update',
       params: LocalPlayer
