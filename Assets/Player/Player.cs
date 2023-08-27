@@ -6,6 +6,7 @@ public class Player : MonoBehaviour
 {
     public float gasPower, torquePower, maxSpeed = 5;
 
+    [SerializeField]
     private float gasInput, hInput, vInput;
     private Rigidbody2D rb;
 
@@ -18,14 +19,14 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        gasInput = Input.GetAxis("Gas");
-        hInput = Input.GetAxis("Horizontal");
-        vInput = Input.GetAxis("Vertical");
+        gasInput    = Input.GetAxis("Fire1");
+        hInput      = Input.GetAxis("Horizontal");
+        vInput      = Input.GetAxis("Vertical");
     }
 
     private void FixedUpdate()
     {
-        rb.AddRelativeForce(new Vector2(0, gasInput * gasPower));
-        rb.AddTorque(-Input.GetAxis("Horizontal") * torquePower);
+        rb.AddRelativeForce(new Vector2(0, vInput * gasPower));
+        rb.AddTorque(-hInput * torquePower);
     }
 }
