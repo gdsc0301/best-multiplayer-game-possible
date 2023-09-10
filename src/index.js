@@ -3,6 +3,8 @@ import Room from '../src/Room';
 
 import './style.scss';
 
+import { Engine, Scene } from '@babylonjs/core';
+
 const server = {
   /** @type {String} */
   ipAddress: undefined,
@@ -24,7 +26,18 @@ const welcomeMessage = document.querySelector('.welcomeMessage');
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById('app');
-const ctx = canvas.getContext('2d');
+const engine = new Engine(canvas, true);
+const scene = new Scene(engine);
+
+window.addEventListener("keydown", (ev) => {
+  if (ev.shiftKey && ev.ctrlKey && ev.altKey && ev.key === 'i') {
+    if (scene.debugLayer.isVisible()) {
+      scene.debugLayer.hide();
+    } else {
+      scene.debugLayer.show();
+    }
+  }
+});
 
 /** @type {Player} */
 let LocalPlayer;
@@ -66,7 +79,8 @@ function init() {
                   });
 
                   welcomeMessage.innerHTML = 'Insert the IP address and username to start';
-                  clearInterval(gameplayLoop);
+                  // clearInterval(gameplayLoop);
+                  engine.stopRenderLoop();
                   return;
                 }
               }
@@ -75,17 +89,24 @@ function init() {
             window.addEventListener('beforeunload', () => {
               if(gameplayLoop){
                 fetch(getReqURL('logout'));
-                clearInterval(gameplayLoop);
+                
+                // clearInterval(gameplayLoop);
+                engine.stopRenderLoop();
               }
               return;
             });
 
             welcomeMessage.innerHTML = 'Welcome, ' + username;
-            gameplayLoop = setInterval(update, 1000/60);
+            
+            // gameplayLoop = setInterval(update, 1000/60);
+            engine.runRenderLoop(update);
           }else {
             emailErrorField.innerHTML = 'Login failed, try again later';
             emailErrorField.classList.add('active');
-            clearInterval(gameplayLoop);
+            
+            // clearInterval(gameplayLoop);
+            engine.stopRenderLoop();
+
             console.error(body);
           }
         })
@@ -148,19 +169,15 @@ function update() {
 }
 
 function draw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  LocalPlayer.draw(ctx, canvas.width, canvas.height, LocalPlayer);
+  LocalPlayer.draw(scene);
   for(const player_id in currentRoom.players) {
     if(player_id === LocalPlayer.username) continue;
 
-    currentRoom.players[player_id].draw(
-      ctx, canvas.width, canvas.height, LocalPlayer
-    )
+    currentRoom.players[player_id].draw(scene);
   }
 
-  ctx.strokeStyle = 'white';
-  ctx.strokeRect(-LocalPlayer.x, -LocalPlayer.y, currentRoom.width, currentRoom.height);
+  currentRoom.draw(scene);
+  scene.render();
 }
 
 init();

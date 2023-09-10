@@ -1,11 +1,15 @@
+import { Mesh, MeshBuilder, Scene, StandardMaterial, Texture } from "@babylonjs/core";
+
 export class Player {
     username = '';
     currentRoomID = '';
     x = 0;
     y = 0;
 
-    style = 'orange';
-    usernameStyle = 'white';
+    #mesh;
+    #meshMaterial;
+
+    #nicknameMesh;
 
     width = 20;
     height = 20;
@@ -81,36 +85,17 @@ export class Player {
         this.y = y;
     }
 
-    /**
-     * @param {CanvasRenderingContext2D} ctx 
-     * @param {number} canvasWidth 
-     * @param {number} canvasHeight 
-     * @param {Player} localPlayer 
-     */
-    draw(ctx, canvasWidth, canvasHeight, localPlayer) {
-        const PlayerD2D = new Path2D();
-        const offset = {
-            x: localPlayer.x - (canvasWidth / 2),
-            y: localPlayer.y - (canvasHeight / 2)
-        };
+    /** @param {Scene} scene */
+    async draw(scene) {
+        const fontData = await (await fetch("/fonts/Montserrat_Bold.json")).json();
+        this.#meshMaterial = new StandardMaterial("playerMaterial", scene);
+        this.#meshMaterial.diffuseTexture =  new Texture("/ship.png");
 
-        const thisPos = {
-            x: this.x - offset.x,
-            y: this.y - offset.y
-        };
+        this.#mesh = MeshBuilder.CreatePlane(username, {size: 1, sideOrientation: Mesh.FRONTSIDE}, scene);
+        this.#mesh.material = this.#meshMaterial;
+        this.#mesh.position = new Vector3(this.x, this.y, 2);
 
-        ctx.strokeStyle = this.style;
-        PlayerD2D.moveTo(thisPos.x - this.width/2, thisPos.y + this.height/2);
-        PlayerD2D.lineTo(thisPos.x, thisPos.y - this.height/2);
-        PlayerD2D.lineTo(thisPos.x + this.width/2, thisPos.y + this.height/2);
-        PlayerD2D.closePath();
-
-        ctx.stroke(PlayerD2D);
-
-        ctx.fillStyle = this.usernameStyle;
-        ctx.fillText(this.username, thisPos.x, thisPos.y - this.height - 12);
-
-        return PlayerD2D;
+        this.#nicknameMesh = MeshBuilder.CreateText(`${this.username}Title`, this.username, fontData, {size: 24, resolution: 64, depth: 10}, scene);
     }
 
     setInputAxis(x,y) {

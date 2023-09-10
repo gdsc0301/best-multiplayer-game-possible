@@ -1,3 +1,4 @@
+import { Mesh, MeshBuilder, StandardMaterial, Vector3 } from "@babylonjs/core";
 import { Player } from "./Player.js";
 
 export default class Room {
@@ -7,6 +8,10 @@ export default class Room {
     players = {};
     max_players_amount = 128;
     start_timestamp;
+
+    /** @type {Mesh} */
+    roomMesh;
+    roomMaterial;
 
     /**
      * @param {String} ID Room ID;
@@ -73,5 +78,21 @@ export default class Room {
      */
     get_player(player_username) {
         return this.player_is_here(player_username) && this.players[player_username];
+    }
+
+    draw(scene) {
+        this.roomMesh = new MeshBuilder.CreatePlane('roomMesh',
+            {
+                width: this.width,
+                height: this.height
+            },
+            scene
+        );
+
+        this.roomMaterial = new StandardMaterial('roomMaterial', scene);
+        this.roomMaterial.diffuseColor = new Vector3(0, 0, .5);
+
+        this.roomMesh.position = new Vector3(this.width/2, this.height/2, 1);
+        this.roomMesh.material = this.roomMaterial;
     }
 }
