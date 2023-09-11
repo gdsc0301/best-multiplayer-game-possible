@@ -1,4 +1,4 @@
-import { Mesh, MeshBuilder, StandardMaterial, Vector3 } from "@babylonjs/core";
+import { HemisphericLight, Mesh, MeshBuilder, StandardMaterial, Vector3 } from "@babylonjs/core";
 import { Player } from "./Player.js";
 
 export default class Room {
@@ -92,7 +92,9 @@ export default class Room {
         this.roomMaterial = new StandardMaterial('roomMaterial', scene);
         this.roomMaterial.diffuseColor = new Vector3(0, 0, .5);
 
-        this.roomMesh.position = new Vector3(this.width/2, this.height/2, 1);
+        this.roomMesh.position = new Vector3(this.width/2, this.height/2, -1);
         this.roomMesh.material = this.roomMaterial;
+
+        new HemisphericLight('HemisphericLight', new Vector3(0,1,0), scene);
     }
 }

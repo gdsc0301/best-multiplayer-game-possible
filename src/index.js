@@ -1,9 +1,11 @@
+import * as earcut from 'earcut';
 import { Player } from './Player';
 import Room from '../src/Room';
 
 import './style.scss';
 
-import { Engine, Scene } from '@babylonjs/core';
+import { Camera, Engine, Scene, Vector3 } from '@babylonjs/core';
+import { MontSerrat } from './FontSources';
 
 const server = {
   /** @type {String} */
@@ -29,6 +31,8 @@ const canvas = document.getElementById('app');
 const engine = new Engine(canvas, true);
 const scene = new Scene(engine);
 
+const camera = new Camera('mainCamera', new Vector3(0,0,10), scene);
+
 window.addEventListener("keydown", (ev) => {
   if (ev.shiftKey && ev.ctrlKey && ev.altKey && ev.key === 'i') {
     if (scene.debugLayer.isVisible()) {
@@ -40,7 +44,8 @@ window.addEventListener("keydown", (ev) => {
 });
 
 /** @type {Player} */
-let LocalPlayer;
+let LocalPlayer = new Player('Guest');
+LocalPlayer.setPosition(0, 0);
 
 /** @type {Room} */
 let currentRoom;
@@ -99,7 +104,6 @@ function init() {
             welcomeMessage.innerHTML = 'Welcome, ' + username;
             
             // gameplayLoop = setInterval(update, 1000/60);
-            engine.runRenderLoop(update);
           }else {
             emailErrorField.innerHTML = 'Login failed, try again later';
             emailErrorField.classList.add('active');
@@ -116,6 +120,8 @@ function init() {
       emailErrorField.classList.add('active');
     }
   });
+  
+  engine.runRenderLoop(update);
 }
 
 function getReqURL(path) {
@@ -160,23 +166,29 @@ function sendPlayerToServer() {
 }
 
 function update() {
-  getRoomData();
+  if(currentRoom)
+    getRoomData();
   
   LocalPlayer.move();
 
-  sendPlayerToServer();
+  if(currentRoom)
+    sendPlayerToServer();
+
   draw();
 }
 
 function draw() {
   LocalPlayer.draw(scene);
-  for(const player_id in currentRoom.players) {
-    if(player_id === LocalPlayer.username) continue;
+  if(currentRoom){
+    for(const player_id in currentRoom.players) {
+      if(player_id === LocalPlayer.username) continue;
 
-    currentRoom.players[player_id].draw(scene);
+      currentRoom.players[player_id].draw(scene);
+      currentRoom.players[player_id].setNicknameMesh(MeshBuilder.CreateText(`${currentRoom.players[player_id].username}Title`, currentRoom.players[player_id].username, MontSerrat, {size: 24, resolution: 64, depth: 10}, scene));
+    }
+
+    currentRoom.draw(scene);
   }
-
-  currentRoom.draw(scene);
   scene.render();
 }
 

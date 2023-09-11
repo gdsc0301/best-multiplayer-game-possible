@@ -1,4 +1,4 @@
-import { Mesh, MeshBuilder, Scene, StandardMaterial, Texture } from "@babylonjs/core";
+import { HemisphericLight, Mesh, MeshBuilder, Scene, StandardMaterial, Texture, Vector3, Vector4 } from "@babylonjs/core";
 
 export class Player {
     username = '';
@@ -7,6 +7,7 @@ export class Player {
     y = 0;
 
     #mesh;
+    /** @type {StandardMaterial} */
     #meshMaterial;
 
     #nicknameMesh;
@@ -87,15 +88,23 @@ export class Player {
 
     /** @param {Scene} scene */
     async draw(scene) {
-        const fontData = await (await fetch("/fonts/Montserrat_Bold.json")).json();
         this.#meshMaterial = new StandardMaterial("playerMaterial", scene);
-        this.#meshMaterial.diffuseTexture =  new Texture("/ship.png");
+        // this.#meshMaterial.diffuseTexture = new Texture("/ship.png");
+        this.#meshMaterial.diffuseColor = new Vector3(1, 0, 0);
 
-        this.#mesh = MeshBuilder.CreatePlane(username, {size: 1, sideOrientation: Mesh.FRONTSIDE}, scene);
+        this.#mesh = MeshBuilder.CreatePlane(this.username, 
+            {
+                size: 8, sideOrientation: Mesh.FRONTSIDE, 
+                frontUVs: new Vector4(0,1,0,1)
+            }, 
+            scene
+        );
         this.#mesh.material = this.#meshMaterial;
-        this.#mesh.position = new Vector3(this.x, this.y, 2);
+        this.#mesh.position = new Vector3(this.x, this.y, 0);
+    }
 
-        this.#nicknameMesh = MeshBuilder.CreateText(`${this.username}Title`, this.username, fontData, {size: 24, resolution: 64, depth: 10}, scene);
+    setNicknameMesh(TextMesh) {
+        this.#nicknameMesh = TextMesh;
     }
 
     setInputAxis(x,y) {

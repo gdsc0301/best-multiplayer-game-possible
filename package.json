@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@babylonjs/core": "^6.20.1",
+    "earcut": "^2.2.4",
     "express": "^4.18.2"
   }
 }
