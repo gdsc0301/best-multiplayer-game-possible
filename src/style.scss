@@ -17,6 +17,8 @@
 body {
   position: relative;
   margin: 0;
+  padding: 0;
+
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -25,20 +27,36 @@ body {
   min-height: 100vh;
 
   #app {
-    width: 640px;
-    height: 360px;
-
-    border: 1px solid white;
+    width: 100vw;
+    height: 100vh;
   }
 
   #loginForm {
-    position: relative;
+    position: absolute;
+
+    left: calc(50% - 320px);
+    bottom: 2%;
+
     width: 640px;
 
     display: grid;
     grid-template-columns: 3fr 2fr 1fr;
     gap: 8px;
     padding: 32px 0;
+
+    z-index: 2;
+
+    .welcomeMessage {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+
+      width: 100%;
+
+      font-size: 18px;
+      font-weight: 700;
+      text-align: center;
+    }
 
     .error {
       position: absolute;

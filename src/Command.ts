@@ -1,5 +1,8 @@
 class Command {
-    constructor(action, key) {
+    action: string;
+    key: string;
+    
+    constructor(action: string, key: string) {
         this.action = action;
         this.key = key;
     }

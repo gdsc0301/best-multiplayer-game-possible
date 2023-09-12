@@ -1,0 +1,1 @@
+export const MontSerrat = await (await fetch("/fonts/Montserrat_Bold.json")).json();;

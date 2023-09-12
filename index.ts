@@ -1,24 +1,24 @@
 import { createHash } from "node:crypto";
-import { Player } from './src/Player.js';
-import { Response, BAD_REQUEST, OK, UNAUTHORIZED } from './src/Response.js';
-import Room from './src/Room.js';
+import { Player } from './src/Player';
+import { Response, BAD_REQUEST, OK, UNAUTHORIZED } from './src/Response';
+import Room from './src/Room';
 
 import express from 'express';
+import { Vector3 } from "@babylonjs/core";
 
 const ALLOW_ACCESS_ORIGINS = ['http://localhost:5173', 'https://gdsc0301.github.io'];
 
 const app = express();
 
-const PORT = parseInt(process.env.PORT) || 8080;
-const BasicHeaders = {
+export const PORT = parseInt(process.env.PORT || '8080');
+export const BasicHeaders = {
     "Content-Type": "application/json",
     "Vary": "Origin",
     "Access-Control-Allow-Methods": ["POST", "GET"],
     "Access-Control-Allow-Credentials": "true"
 };
 
-/** @type {Object.<string, Room>} */
-const rooms = {};
+const rooms: {[ID: string]: Room} = {};
 
 /**
  * @param {Player} player 
@@ -63,7 +63,6 @@ const room_exist = (room_id) => {
 }
 
 const get_headers = (origin) => {
-    console.log(origin, ALLOW_ACCESS_ORIGINS.indexOf(origin));
     if(ALLOW_ACCESS_ORIGINS.indexOf(origin) === -1) {
         return BasicHeaders;
     }else {
@@ -91,19 +90,21 @@ app.get('/', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-    const player_email = req.query['player_email'];
+    const player_email = req.query['player_email']+'';
 
     const new_player = new Player(player_email);
     const new_player_room = assign_room_for(new_player);
 
+    const body = new Response(new_player_room);
+    
     res.set(get_headers(req.headers.origin));
-    res.status(OK).json((new Response(new_player_room)));
+    res.status(OK).json(body);
     return;
 });
 
 app.get('/room', (req, res) => {
     const player_email = req.query['player_email'];
-    const room_id = req.query['room_id'];
+    const room_id = req.query['room_id']+'';
 
     const response = new Response();
     const player_is_here = rooms[room_id].player_is_here(player_email);
@@ -117,14 +118,15 @@ app.get('/room', (req, res) => {
 
     res.set(get_headers(req.headers.origin));
     res.status(OK).json(response);
+    
     return;
 });
 
 app.post('/player_update', (req, res) => {
-    const player_email = req.query['player_email'];
-    const room_id = req.query['room_id'];
+    const player_email = req.query['player_email']+'';
+    const room_id = req.query['room_id']+'';
 
-    let response = undefined;
+    let response = new Response();
     const body = JSON.parse(req.body);
     if(!body) {
         response = new Response(req.body, BAD_REQUEST, 'Invalid player data')
@@ -135,21 +137,32 @@ app.post('/player_update', (req, res) => {
         res.set(get_headers(req.headers.origin));
     }
 
-    const targetPlayer = rooms[room_id].get_player(player_email);
-    if(targetPlayer)
-        targetPlayer.setPosition(body.params.x, body.params.y);
-    else
-        response = (new Response({}, BAD_REQUEST, 'Invalid player email'));
+    const updateData = body.params;
+
+    const areYouThere = rooms[room_id].player_is_here(player_email);
+    if(areYouThere){
+        const newPos = new Vector3(updateData.position._x, updateData.position._y, 0);
+        const newRot = new Vector3(updateData.rotation._x, updateData.rotation._y, updateData.rotation._z);
+        rooms[room_id].players[player_email].update(newPos, newRot);
+    }else{
+        response = new Response({}, BAD_REQUEST, 'Invalid player email');
+    }
     
     res.status(OK).json(response);
     return;
 });
 
 app.get('/logout', (req, res) => {
-    const player_email = req.query['player_email'];
-    const room_id = req.query['room_id'];
+    const player_email = req.query['player_email']+'';
+    const room_id = req.query['room_id']+'';
 
-    rooms[room_id]?.remove_player(player_email);
+    if(!rooms[room_id]) {
+        res.set(get_headers(req.headers.origin));
+        res.status(BAD_REQUEST).json((new Response({}, BAD_REQUEST, 'Invalid room ID')));
+        return;
+    }
+
+    rooms[room_id].remove_player(player_email);
 
     res.set(get_headers(req.headers.origin));
     res.end();
