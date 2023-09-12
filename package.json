@@ -6,9 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "bunx --bun vite --host",
-    "build": "bunx --bun vite build",
+    "build": "npx vite build",
     "preview": "bunx --bun vite preview",
-    "start": "bun run index.ts",
+    "start": "node index.ts",
     "docker-build": "docker build -t game-server . && docker run -dp 127.0.0.1:8080:8080 game-server"
   },
   "engines": {

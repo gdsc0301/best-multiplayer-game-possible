@@ -1,11 +1,11 @@
-FROM oven/bun;
+FROM node:18-alpine
 
 COPY . .
 
 ENV PORT=8080
 
-RUN bun install
-RUN bun run build
+RUN npm install
+RUN npm run build
 
 EXPOSE 8080:8080
-CMD [ "bun", "start" ]
+CMD [ "npm", "run", "start" ]
