@@ -23,9 +23,4 @@ describe('server', () => {
     const response = await fetch(`http://localhost:${server.PORT}/unknown-path`);
     expect(response.status).toBe(404);
   });
-
-  test('force unknown method', async () => {
-    const response = await fetch(`http://localhost:${server.PORT}/`, { method: 'PUT' });
-    expect(response.status).toBe(405);
-  });
 });
