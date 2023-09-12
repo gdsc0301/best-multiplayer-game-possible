@@ -1,14 +1,14 @@
 {
   "name": "best-multiplayer-game-possible",
-  "version": "0.1",
+  "version": "0.2",
   "description": "The best multiplayer game possible each 'git push'.",
-  "main": "index.js",
+  "main": "index.ts",
   "type": "module",
   "scripts": {
-    "dev": "vite --host",
-    "build": "vite build",
-    "preview": "vite preview",
-    "start": "node index.js",
+    "dev": "bunx --bun vite --host",
+    "build": "bunx --bun vite build",
+    "preview": "bunx --bun vite preview",
+    "start": "bun run index.ts",
     "docker-build": "docker build -t game-server . && docker run -dp 127.0.0.1:8080:8080 game-server"
   },
   "engines": {
@@ -32,7 +32,13 @@
   "homepage": "https://github.com/gdsc0301/best-multiplayer-game-possible#readme",
   "browserslist": "> 0.25%, not dead",
   "devDependencies": {
+    "@babylonjs/core": "^6.20.1",
+    "@babylonjs/gui": "^6.20.1",
+    "@babylonjs/gui-editor": "^6.20.1",
     "@babylonjs/inspector": "^6.20.1",
+    "@babylonjs/loaders": "^6.20.1",
+    "@babylonjs/materials": "^6.20.1",
+    "@babylonjs/serializers": "^6.20.1",
     "sass": "^1.63.6",
     "vite": "^4.3.9",
     "webpack": "^5.88.2",
@@ -40,8 +46,9 @@
     "webpack-dev-server": "^4.15.1"
   },
   "dependencies": {
-    "@babylonjs/core": "^6.20.1",
+    "babylonjs": "^6.20.1",
     "earcut": "^2.2.4",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "typescript": "^5.0.2"
   }
 }
