@@ -10,7 +10,7 @@ const ALLOW_ACCESS_ORIGINS = ['http://localhost:5173', 'https://gdsc0301.github.
 
 const app = express();
 
-const PORT = parseInt(process.env.PORT || '8080') || 8080;
+const PORT = parseInt(process.env.PORT || '8080');
 const BasicHeaders = {
     "Content-Type": "application/json",
     "Vary": "Origin",
