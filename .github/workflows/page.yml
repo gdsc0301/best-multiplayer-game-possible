@@ -28,8 +28,6 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
-      - run: npm ci
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
 
