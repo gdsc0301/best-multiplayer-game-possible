@@ -4,12 +4,11 @@ export class Player {
     username = '';
     currentRoomID = '';
 
-    private scene!: Scene;
-
-    _mesh!: Mesh;
-    private _meshMaterial!: StandardMaterial;
+    #_mesh!: Mesh;
+    #_meshMaterial!: StandardMaterial;
 
     position: Vector3;
+    rotation: Vector3;
 
     width = 20;
     height = 20;
@@ -27,26 +26,26 @@ export class Player {
     constructor(username, scene?: Scene, local: boolean = false) {
         this.username = username;
         this.position = new Vector3();
+        this.rotation = new Vector3();
         this.velocity = new Vector3();
 
         if(scene) {
-            this.scene = scene;
-            this._mesh = MeshBuilder.CreatePlane(this.username, 
+            this.#_mesh = MeshBuilder.CreatePlane(this.username, 
                 {
                     size: 1, sideOrientation: Mesh.FRONTSIDE
                 }, 
                 scene
             );
-            this._mesh.position = new Vector3();
-            this.position = this._mesh.position;
+            this.#_mesh.position = new Vector3();
+            this.position = this.#_mesh.position;
 
             const ship = new Texture("/ship.png");
-            this._meshMaterial = new StandardMaterial("playerMaterial", scene);
-            this._meshMaterial.diffuseTexture = ship;
-            this._meshMaterial.diffuseTexture.hasAlpha = true;
+            this.#_meshMaterial = new StandardMaterial("playerMaterial", scene);
+            this.#_meshMaterial.diffuseTexture = ship;
+            this.#_meshMaterial.diffuseTexture.hasAlpha = true;
 
-            this._mesh.material = this._meshMaterial;
-            this._mesh.rotation.set(0,0,0);
+            this.#_mesh.material = this.#_meshMaterial;
+            this.#_mesh.rotation.set(0,0,0);
 
             if(local) {
                 this.initInputEvents(scene);
@@ -108,9 +107,9 @@ export class Player {
             .99, // y
             0
         );
-        const angle = Scalar.NormalizeRadians(this._mesh.rotation.z);
+        const angle = Scalar.NormalizeRadians(this.#_mesh.rotation.z);
         
-        const dt = this.scene.getEngine().getDeltaTime() / 1000;
+        const dt = this.#_mesh.getEngine().getDeltaTime() / 1000;
 
         const force = this.speed * this.inputAxis.y;
         this.velocity.addInPlaceFromFloats(
@@ -119,30 +118,44 @@ export class Player {
             0
         );
 
-        this._mesh.position.addInPlace(new Vector3(this.velocity.x * dt, this.velocity.y * dt, 0));
-        this._mesh.rotation.z -= (this.inputAxis.x * (this.angularSpeed / 100)) * this.scene.getAnimationRatio();
-        this.updatePublicPosition();
+        this.#_mesh.position.addInPlace(new Vector3(this.velocity.x * dt, this.velocity.y * dt, 0));
+        this.#_mesh.rotation.z -= (this.inputAxis.x * this.angularSpeed) * dt;
+        this.updatePublicTransform();
     }
 
     setPosition(newPosition: Vector3) {
-        if(this._mesh){
-            this._mesh.position = newPosition;
-            this.updatePublicPosition();
+        if(this.#_mesh){
+            this.#_mesh.position = newPosition;
+            this.updatePublicTransform();
             return;
         }
         
         this.position = newPosition;
     }
 
-    updatePublicPosition() {
-        if(this._mesh)
-            this.position = this._mesh.position;
+    update(position: Vector3, rotation: Vector3) {
+        if(this.#_mesh){
+            this.#_mesh.position = position;
+            this.#_mesh.rotation = rotation;
+
+            this.updatePublicTransform();
+        }else {
+            this.position = position;
+            this.rotation = rotation;
+        }
+    }
+
+    updatePublicTransform() {
+        if(this.#_mesh){
+            this.position = this.#_mesh.position;
+            this.rotation = this.#_mesh.rotation;
+        }
     }
 
     get mesh() {
-        return this._mesh;
+        return this.#_mesh;
     }
     get meshMaterial() {
-        return this._meshMaterial;
+        return this.#_meshMaterial;
     }
 }

@@ -4,6 +4,7 @@ import { Response, BAD_REQUEST, OK, UNAUTHORIZED } from './src/Response';
 import Room from './src/Room';
 
 import express from 'express';
+import { Vector3 } from "@babylonjs/core";
 
 const ALLOW_ACCESS_ORIGINS = ['http://localhost:5173', 'https://gdsc0301.github.io'];
 
@@ -17,8 +18,7 @@ const BasicHeaders = {
     "Access-Control-Allow-Credentials": "true"
 };
 
-/** @type {Object.<string, Room>} */
-const rooms = {};
+const rooms: {[ID: string]: Room} = {};
 
 /**
  * @param {Player} player 
@@ -63,7 +63,6 @@ const room_exist = (room_id) => {
 }
 
 const get_headers = (origin) => {
-    console.log(origin, ALLOW_ACCESS_ORIGINS.indexOf(origin));
     if(ALLOW_ACCESS_ORIGINS.indexOf(origin) === -1) {
         return BasicHeaders;
     }else {
@@ -119,11 +118,12 @@ app.get('/room', (req, res) => {
 
     res.set(get_headers(req.headers.origin));
     res.status(OK).json(response);
+    
     return;
 });
 
 app.post('/player_update', (req, res) => {
-    const player_email = req.query['player_email'];
+    const player_email = req.query['player_email']+'';
     const room_id = req.query['room_id']+'';
 
     let response = new Response();
@@ -137,18 +137,23 @@ app.post('/player_update', (req, res) => {
         res.set(get_headers(req.headers.origin));
     }
 
-    const targetPlayer = rooms[room_id].get_player(player_email);
-    if(targetPlayer)
-        targetPlayer.setPosition(body.params.x, body.params.y);
-    else
+    const updateData = body.params;
+
+    const areYouThere = rooms[room_id].player_is_here(player_email);
+    if(areYouThere){
+        const newPos = new Vector3(updateData.position._x, updateData.position._y, 0);
+        const newRot = new Vector3(updateData.rotation._x, updateData.rotation._y, updateData.rotation._z);
+        rooms[room_id].players[player_email].update(newPos, newRot);
+    }else{
         response = new Response({}, BAD_REQUEST, 'Invalid player email');
+    }
     
     res.status(OK).json(response);
     return;
 });
 
 app.get('/logout', (req, res) => {
-    const player_email = req.query['player_email'];
+    const player_email = req.query['player_email']+'';
     const room_id = req.query['room_id']+'';
 
     rooms[room_id]?.remove_player(player_email);

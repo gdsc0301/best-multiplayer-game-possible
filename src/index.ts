@@ -95,8 +95,9 @@ class App {
 
               this.currentRoom = Object.assign((new Room(body.data.ID, 1000, 1000, this.scene)), structuredClone(body.data));
               
-              this.localPlayer = Object.assign(this.localPlayer, structuredClone(this.currentRoom.players[this.username]));
-              this.parseRoomPlayers();
+              this.localPlayer.mesh.dispose();
+              this.localPlayer = Object.assign(new Player(this.username, this.scene, true), structuredClone(this.currentRoom.players[this.username]));
+              this.parseRoomPlayers(body.data as Room);
 
               document.addEventListener('keydown', e => {
                 if (e.key === 'Escape') { // On press esc, stop game
@@ -112,11 +113,9 @@ class App {
               );
 
               window.addEventListener('beforeunload', () => {
-                if (this.engine.isDisposed) {
-                  fetch(this.getReqURL('logout'));
+                fetch(this.getReqURL('logout'));
 
-                  this.engine.stopRenderLoop();
-                }
+                this.engine.stopRenderLoop();
                 return;
               });
 
@@ -150,25 +149,43 @@ class App {
       res.json().then(body => {
         if (body?.status === 200) {
           this.emailErrorField.classList.remove('active');
-          this.currentRoom = Object.assign(this.currentRoom, body.data);
-          this.parseRoomPlayers();
+          this.parseRoomPlayers(body.data as Room);
         } else {
           this.emailErrorField.classList.add('active');
           this.emailErrorField.innerHTML = body.error;
-          // clearInterval(this.gameplayLoop);
+          
           this.engine.stopRenderLoop();
         }
       })
     });
   }
 
-  parseRoomPlayers() {
-    console.log(this.currentRoom.players);
-    
-    for (const player_id in this.currentRoom.players) {
-      const playerInst = new Player(player_id, this.scene);
+  parseRoomPlayers(newRoomData: Room) {
+    for (const player_id in newRoomData.players) {
+      if(player_id === this.localPlayer.username) {
+        continue;
+      }
 
-      this.currentRoom.players[player_id] = Object.assign(playerInst, this.currentRoom.players[player_id]);
+      const newPos = new Vector3(newRoomData.players[player_id].position._x, newRoomData.players[player_id].position._y, 0);
+      const newRot = new Vector3(newRoomData.players[player_id].rotation._x, newRoomData.players[player_id].rotation._y, newRoomData.players[player_id].rotation._z);
+
+      // Player already exists
+      if(this.currentRoom.players[player_id] && this.currentRoom.players[player_id] instanceof Player) {
+        this.currentRoom.players[player_id].update(newPos, newRot);
+        return;
+      }
+
+      const newPlayer = Object.assign(new Player(player_id, this.scene, false), this.currentRoom.players[player_id]);
+      newPlayer.update(newPos, newRot);
+
+      this.currentRoom.players[player_id] = newPlayer;
+    }
+
+    for (const player_id in this.currentRoom.players) {
+      if(!newRoomData.players[player_id]) {
+        this.currentRoom.players[player_id].mesh.dispose();
+        delete this.currentRoom.players[player_id];
+      }
     }
   }
 
@@ -193,7 +210,6 @@ class App {
 
     if (this.loggedIn)
       this.sendPlayerToServer();
-
     
     this.scene.render();
   }
