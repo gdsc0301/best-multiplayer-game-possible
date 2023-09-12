@@ -17,7 +17,6 @@ jobs:
   deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -29,9 +28,16 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
-      # Runs a single command using the runners shell
+      - run: npm ci
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: bun install
+
       - name: Build the project
-        run: npm ci && npm run build
+        run: bun run build
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4
