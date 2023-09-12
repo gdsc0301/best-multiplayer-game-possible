@@ -23,7 +23,7 @@ export class Player {
         y: 0
     }
 
-    constructor(username, scene?: Scene, local: boolean = false) {
+    constructor(username: string, scene?: Scene, local: boolean = false) {
         this.username = username;
         this.position = new Vector3();
         this.rotation = new Vector3();
@@ -90,7 +90,7 @@ export class Player {
         scene.onBeforeRenderObservable.add(() => this.move());
     }
 
-    setRoomID(roomID) {
+    setRoomID(roomID: string) {
         if(this.currentRoomID === '') {
             this.currentRoomID = roomID;
             return true;

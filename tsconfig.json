@@ -1,26 +1,29 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
+    "types": ["babylonjs", "bun-types"],
+
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "skipLibCheck": true,
+    "target": "ES2020",
+    "module": "esnext",
 
     /* Bundler mode */
     "moduleResolution": "bundler",
+    "moduleDetection": "force",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
 
+    "allowJs": true,
+    "esModuleInterop": true,
+
     /* Linting */
     "strict": true,
+    "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["babylonjs"],
-    "rootDir": "src",
-    "noImplicitAny": false
+    "skipLibCheck": true,
   },
   "include": ["src"]
 }

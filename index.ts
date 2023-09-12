@@ -10,8 +10,8 @@ const ALLOW_ACCESS_ORIGINS = ['http://localhost:5173', 'https://gdsc0301.github.
 
 const app = express();
 
-const PORT = parseInt(process.env.PORT || '8080');
-const BasicHeaders = {
+export const PORT = parseInt(process.env.PORT || '8080');
+export const BasicHeaders = {
     "Content-Type": "application/json",
     "Vary": "Origin",
     "Access-Control-Allow-Methods": ["POST", "GET"],
@@ -90,7 +90,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-    const player_email = req.query['player_email'];
+    const player_email = req.query['player_email']+'';
 
     const new_player = new Player(player_email);
     const new_player_room = assign_room_for(new_player);
@@ -156,7 +156,13 @@ app.get('/logout', (req, res) => {
     const player_email = req.query['player_email']+'';
     const room_id = req.query['room_id']+'';
 
-    rooms[room_id]?.remove_player(player_email);
+    if(!rooms[room_id]) {
+        res.set(get_headers(req.headers.origin));
+        res.status(BAD_REQUEST).json((new Response({}, BAD_REQUEST, 'Invalid room ID')));
+        return;
+    }
+
+    rooms[room_id].remove_player(player_email);
 
     res.set(get_headers(req.headers.origin));
     res.end();
