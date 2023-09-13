@@ -1,5 +1,7 @@
 import { defineConfig } from 'vite'
 
+const repo = process.env.GITHUB_REPOSITORY;
+
 export default defineConfig({
-  base: process.env.GITHUB_REPOSITORY?.split('/')[1] || '/'
+  base: repo ? '/'+repo.split('/')[1] : '/'
 });
