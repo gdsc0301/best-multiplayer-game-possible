@@ -64,6 +64,8 @@ class App {
 
     this.username = 'Guest';
 
+    this.loginForm['elements'][0].value = window.location.hostname === 'localhost' ? 'http://localhost:8080' : 'https://best-multiplayer-game-possible-pvenbf56dq-uc.a.run.app';
+
     this.loginForm.addEventListener('submit', e => {
       e.preventDefault();
 
@@ -163,20 +165,18 @@ class App {
 
   parseRoomPlayers(newRoomData: Room) {
     for (const player_id in newRoomData.players) {
-      if(player_id === this.localPlayer.username) {
-        continue;
-      }
-
       const newPos = new Vector3(newRoomData.players[player_id].position._x, newRoomData.players[player_id].position._y, 0);
       const newRot = new Vector3(newRoomData.players[player_id].rotation._x, newRoomData.players[player_id].rotation._y, newRoomData.players[player_id].rotation._z);
 
       // Player already exists
       if(this.currentRoom.players[player_id] && this.currentRoom.players[player_id] instanceof Player) {
         this.currentRoom.players[player_id].update(newPos, newRot);
-        return;
+        continue;
       }
 
-      const newPlayer = Object.assign(new Player(player_id, this.scene, false), newRoomData.players[player_id]);
+      const isLocal = player_id === this.localPlayer.username;
+      let newPlayer = new Player(player_id, !isLocal ? this.scene : undefined, isLocal);
+      newPlayer = Object.assign(newPlayer, newRoomData.players[player_id]);
       newPlayer.update(newPos, newRot);
 
       this.currentRoom.players[player_id] = newPlayer;
