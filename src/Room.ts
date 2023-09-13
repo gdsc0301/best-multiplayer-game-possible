@@ -66,10 +66,7 @@ export default class Room {
             player.setPosition(newPosition);
 
             this.players[player.username] = player;
-            return true;
         }
-
-        return false;
     }
 
     remove_player(player_username: string) {
