@@ -103,7 +103,7 @@ app.get('/login', (req, res) => {
 });
 
 app.get('/room', (req, res) => {
-    const player_email = req.query['player_email'];
+    const player_email = req.query['player_email'] + '';
     const room_id = req.query['room_id']+'';
 
     const response = new Response();

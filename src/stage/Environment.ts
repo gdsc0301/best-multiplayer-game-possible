@@ -23,7 +23,7 @@ class Environment {
     this.skybox.position.set(0, 0, 20);
 
     if(!skyboxMaterial){
-      const texture = new Texture("/bg/pn-2.png", this.scene);
+      const texture = new Texture("bg/pn-2.png", this.scene);
       skyboxMaterial = new StandardMaterial("skybox", this.scene);
       
       skyboxMaterial.diffuseTexture = texture;

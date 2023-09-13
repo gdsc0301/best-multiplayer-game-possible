@@ -39,7 +39,7 @@ export class Player {
             this.#_mesh.position = new Vector3();
             this.position = this.#_mesh.position;
 
-            const ship = new Texture("/ship.png");
+            const ship = new Texture("ship.png");
             this.#_meshMaterial = new StandardMaterial("playerMaterial", scene);
             this.#_meshMaterial.diffuseTexture = ship;
             this.#_meshMaterial.diffuseTexture.hasAlpha = true;

@@ -30,7 +30,7 @@ export default class Room {
                 scene
             );
     
-            const gridTexture = new Texture('/bg/grid.png');
+            const gridTexture = new Texture('bg/grid.png');
             this.roomMaterial = new StandardMaterial('roomMaterial', scene);
 
             this.roomMaterial.diffuseTexture = gridTexture;
@@ -77,7 +77,7 @@ export default class Room {
             delete this.players[player_username];
     }
 
-    player_is_here(playerUsername) {
+    player_is_here(playerUsername: string) {
         return !(Object.keys(this.players).indexOf(playerUsername) === -1);
     }
 
