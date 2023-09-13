@@ -176,7 +176,7 @@ class App {
         return;
       }
 
-      const newPlayer = Object.assign(new Player(player_id, this.scene, false), this.currentRoom.players[player_id]);
+      const newPlayer = Object.assign(new Player(player_id, this.scene, false), newRoomData.players[player_id]);
       newPlayer.update(newPos, newRot);
 
       this.currentRoom.players[player_id] = newPlayer;
