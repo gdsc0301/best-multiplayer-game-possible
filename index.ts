@@ -14,14 +14,15 @@ export const PORT = parseInt(process.env.PORT || '8080');
 export const BasicHeaders = {
     "Content-Type": "application/json",
     "Vary": "Origin",
-    "Access-Control-Allow-Methods": ["POST", "GET"],
+    "Access-Control-Allow-Methods": "POST, GET",
+    "Access-Control-Max-Age": "86400",
     "Access-Control-Allow-Credentials": "true"
 };
 
 const rooms: {[ID: string]: Room} = {};
 const players: {[username: string]: Player} = {};
 
-const assign_room_for = (playerUsername: string): Room | false => {
+const assign_room_for = (playerUsername: string): Room => {
     if(Object.keys(rooms).length === 0) { // If ther's no room, create a new one;
         const new_room = new Room(createHash('sha256').update(Date.now().toString()).digest('hex'));
         players[playerUsername].setRoomID(new_room.ID);
@@ -61,7 +62,7 @@ const get_headers = (origin: string) => {
     }else {
         return {
             ...BasicHeaders,
-            ...{"Access-Control-Allow-Origin": origin}
+            "Access-Control-Allow-Origin": origin
         };
     }
 }
@@ -77,27 +78,33 @@ app.use((req, res, next) => {
 
 app.use(express.text());
 
+app.options('*', (req, res) => {
+    res.set(get_headers(req.headers.origin!));
+    res.end();
+});
+
 app.get('/', (req, res) => {
-    res.set(get_headers(req.headers.origin || ''));
+    res.set(get_headers(req.headers.origin!));
     res.end('This is the BMGP server');
 });
 
 app.get('/login', (req, res) => {
+    const origin = req.headers.origin!;
     const player_email = req.query['player_email']+'';
     players[player_email] = new Player(player_email);
 
     const new_player_room = assign_room_for(player_email);
 
     const body = new Response(new_player_room);    
-    res.set(get_headers(req.headers.origin || ''));
+    res.set(get_headers(origin));
     res.status(OK).json(body);
 
-    console.log('New player: ', players[player_email], new_player_room);
+    console.log('New player: ', origin, players[player_email].username, new_player_room.ID);
     return;
 });
 
 app.get('/room', (req, res) => {
-    const origin = req.headers.origin || '';
+    const origin = req.headers.origin!;
     const player_email = req.query['player_email'] + '';
 
     const response = new Response();
@@ -120,7 +127,7 @@ app.get('/room', (req, res) => {
 });
 
 app.post('/player_update', (req, res) => {
-    const origin = req.headers.origin || '';
+    const origin = req.headers.origin!;
     const player_email = req.query['player_email']+'';
     
     if(!players[player_email]) {
@@ -152,7 +159,7 @@ app.post('/player_update', (req, res) => {
 });
 
 app.get('/logout', (req, res) => {
-    const origin = req.headers.origin || '';
+    const origin = req.headers.origin!;
     const player_email = req.query['player_email']+'';
 
     if(!players[player_email]) {

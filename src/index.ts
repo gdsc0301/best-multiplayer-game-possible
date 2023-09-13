@@ -53,18 +53,6 @@ class App {
 
     this.camera = new FreeCamera('mainCamera', new Vector3(0, 0, -20), this.scene);
 
-    window.addEventListener("keydown", (e) => {
-      if (e.key === 'F1') {
-        if (Inspector.IsVisible) {
-          Inspector.Hide();
-        } else {
-          Inspector.Show(this.scene,{});
-        }
-      }
-    });
-
-    window.addEventListener('resize', () => this.engine.resize());
-
     this.localPlayer = new Player('LocalPlayer', this.scene, true);
     this.localPlayer.setPosition(Vector3.Zero());
 
@@ -82,66 +70,79 @@ class App {
       server.ipAddress = e.target!['elements'][0].value;
       this.username = e.target!['elements'][1].value;
 
-      if (server.URL && this.username) {
-        fetch(`${server.URL}/login?player_email=${encodeURIComponent(this.username)}`).then(res => {
-          res.json().then(body => {
-            if (body?.status === 200) {
-              Object.keys(e.target!['elements']).forEach(elm => {
-                e.target!['elements'][elm].setAttribute('disabled', '');
-              });
+      this.initGame(e);
+    });
 
-              this.canvas.focus({ preventScroll: true });
-              this.emailErrorField.classList.remove('active');
-
-              this.currentRoom = Object.assign((new Room(body.data.ID, 1000, 1000, this.scene)), structuredClone(body.data));
-              
-              this.localPlayer.mesh.dispose();
-              this.localPlayer = Object.assign(new Player(this.username, this.scene, true), structuredClone(this.currentRoom.players[this.username]));
-              this.parseRoomPlayers(body.data as Room);
-
-              document.addEventListener('keydown', e => {
-                if (e.key === 'Escape') { // On press esc, stop game
-                  Object.keys(this.loginForm.elements).forEach(elm => {
-                    this.loginForm.elements[elm].removeAttribute('disabled', '');
-                  });
-
-                  this.welcomeMessage.innerHTML = 'Insert the IP address and username to start';
-                  this.engine.stopRenderLoop();
-                  return;
-                }
-              }
-              );
-
-              window.addEventListener('beforeunload', () => {
-                fetch(this.getReqURL('logout'));
-
-                this.engine.stopRenderLoop();
-                return;
-              });
-
-              this.welcomeMessage.innerHTML = 'Welcome, ' + this.username;
-              this.loggedIn = true;
-            } else {
-              this.emailErrorField.innerHTML = 'Login failed, try again later';
-              this.emailErrorField.classList.add('active');
-
-              this.engine.stopRenderLoop();
-
-              console.error(body);
-            }
-          })
-        });
-      } else {
-        this.emailErrorField.innerHTML = 'Invalid IP address or Username';
-        this.emailErrorField.classList.add('active');
+    
+    window.addEventListener("keydown", (e) => {
+      if (e.key === 'F1') {
+        Inspector.IsVisible ? Inspector.Hide() : Inspector.Show(this.scene,{});
       }
     });
 
+    window.addEventListener('resize', () => this.engine.resize());
     this.engine.runRenderLoop(()=> this.update());
   }
 
+  initGame(e) {
+    if (server.URL && this.username) {
+      fetch(`${server.URL}/login?player_email=${encodeURIComponent(this.username)}`).then(res => {
+        res.json().then(body => {
+          if (body?.status === 200) {
+            Object.keys(e.target!['elements']).forEach(elm => {
+              e.target!['elements'][elm].setAttribute('disabled', '');
+            });
+
+            this.canvas.focus({ preventScroll: true });
+            this.emailErrorField.classList.remove('active');
+
+            this.currentRoom = Object.assign((new Room(body.data.ID, 1000, 1000, this.scene)), structuredClone(body.data));
+            
+            this.localPlayer.mesh.dispose();
+            this.localPlayer = Object.assign(new Player(this.username, this.scene, true), structuredClone(this.currentRoom.players[this.username]));
+            this.parseRoomPlayers(body.data as Room);
+
+            document.addEventListener('keydown', e => {
+              if (e.key === 'Escape') { // On press esc, stop game
+                Object.keys(this.loginForm.elements).forEach(elm => {
+                  this.loginForm.elements[elm].removeAttribute('disabled', '');
+                });
+
+                this.welcomeMessage.innerHTML = 'Insert the IP address and username to start';
+                this.engine.stopRenderLoop();
+                return;
+              }
+            }
+            );
+
+            window.addEventListener('beforeunload', () => {
+              fetch(this.getReqURL('logout'));
+
+              this.engine.stopRenderLoop();
+              return;
+            });
+
+            this.welcomeMessage.innerHTML = 'Welcome, ' + this.username;
+            this.loggedIn = true;
+          } else {
+            this.emailErrorField.innerHTML = 'Login failed, try again later';
+            this.emailErrorField.classList.add('active');
+
+            this.engine.stopRenderLoop();
+
+            console.error(body);
+          }
+        })
+      });
+    } else {
+      this.emailErrorField.innerHTML = 'Invalid IP address or Username';
+      this.emailErrorField.classList.add('active');
+    }
+  }
+
+
   getReqURL(path: string) {
-    return `${server.URL}/${path}?player_email=${this.localPlayer.username}&room_id=${this.localPlayer.currentRoomID}`;
+    return `${server.URL}/${path}?player_email=${this.localPlayer.username}`;
   }
 
   getRoomData() {
