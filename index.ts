@@ -95,6 +95,8 @@ app.get('/login', (req, res) => {
     const new_player = new Player(player_email);
     const new_player_room = assign_room_for(new_player);
 
+    console.log('New player: ', new_player, new_player_room);
+    
     const body = new Response(new_player_room);
     
     res.set(get_headers(req.headers.origin));
@@ -107,6 +109,17 @@ app.get('/room', (req, res) => {
     const room_id = req.query['room_id']+'';
 
     const response = new Response();
+
+    if(!rooms[room_id]) {
+        console.error('Invalid room ID');
+
+        response.error = "Invalid room ID";
+        response.status = BAD_REQUEST;
+        res.set(get_headers(req.headers.origin));
+        res.status(BAD_REQUEST).json(response);
+        return;
+    }
+
     const player_is_here = rooms[room_id].player_is_here(player_email);
     
     if(player_is_here) {
